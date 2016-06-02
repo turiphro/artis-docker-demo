@@ -1,0 +1,5730 @@
+% Bepaling benodigdheden dier\
+% Auteur: Robrecht Jurriaans
+% 
+% predikaten voor bepaling geschiktheid van verblijf voor dieren
+% en bepaling geschikte verblijven voor specifieke dieren
+% 
+
+% Buildingcheck geeft lijst van dieren die in een verblijf kunnen
+buildingcheck(No, Truelist):-
+	findall(Mat, hasprop(No, _, Mat), Matlist),
+	findall(Animals, findani(Matlist, Animals), List),
+	remdup(List, Truelist).
+
+findani(Mats, Animal):-
+	prop(Animal, naam, _),
+	findall(Need, hasprop(Animal, nodig, Need), Needs),
+        compare(Needs, Mats).
+
+% Animalcheck geeft lijst van gebouwen waar een dier in zou kunnen
+animalcheck(Ani, Truelist):-
+	findall(Need, hasprop(Ani, nodig, Need), Needs),
+	remdup(Needs, Needs2),
+	findall(Buildings, findbuild(Needs2, Buildings), List),
+	remdup(List, Truelist).
+
+findbuild(Needs, Building):-
+	prop(Building, loc, _),
+	findall(Mat, hasprop(Building, _, Mat), Matlist),
+	compare(Needs, Matlist).
+
+
+% Kijkt of alle needs van een dier bij een gebouw aanwezig zijn
+compare([], _):-!.
+compare([H|T], Mats):-
+	memberchk(H, Mats),
+	compare(T, Mats).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+needs(Animal, Needs):-
+	isa(Animal, Type),
+	findall(X, prop(Type, need, X), Needs).  % need moet worden: heeft_nodig
+
+
+% Bepaling geschiktheid van verblijf
+
+buildingcheck(Building, Animallist):-
+	findall(X, prop(Building, materiaal, X), Matlist),
+	findall(X2, prop(Building, attribute, X2), Attlist),
+	prop(Building, afsluiting, Close),
+	prop(Building, grootte, Size),
+	gobcheck(Matlist/Attlist/Size/Close, Animallist).
+
+gobcheck(Mlist/Alist/Size/Close, Anilist):-
+	findall(Animal, needs(Animal, Mlist/Alist/Size/Close), Anilist).
+	
+needs(Ani, Mlist/Alist/Size/Close):-
+	checkmaterial(Ani, Mlist),
+	checkatt(Ani, Alist),
+	prop(Ani, grootte_orde, Size),
+	prop(Ani, afsluiting, Close).
+
+checkmaterial(Ani, Mlist):-
+	findall(Mats, hasprop(Ani, nodig, Mats), Mlist2),
+	write(Mlist2),
+	mchecker(Mlist, Mlist2).
+
+mchecker(_, []).
+
+mchecker(Mlist, [H|T]):-
+	memberchk(H, Mlist),
+	mchecker(Mlist, T).
+
+
+checkatt(Ani, Alist):-
+	findall(Atts, prop(Ani, atts, Atts), Alist2),
+	mchecker(Alist, Alist2).
+
+achecker(_, []).
+
+achecker(Alist, [H|T]):-
+	memberchk(H, Alist),
+	mchecker(Alist, T).
+*/
+% pork in wrogress
+
+artisgame:-
+	write('Welkom bij Artis the Game\n'),
+	write('Je begint bij level 1 en je hebt 100 Arto\'s in de bank\n'),
+	write('Het systeem kiest een dier en je kan hints krijgen uit 5 categorieen\n'),
+	findall(Animal, vind_level(Animal, 4), List),
+	generateanimal(List, Choice, Rest),
+	givehint(Choice, 5, _),
+	write('Wil je raden of een hint kopen?\nTyp raad\. of hint\.\n'),
+	read(X),
+	artisquestion(X, Choice, Rest, 1, 100).
+
+artisquestion(raad, Choice, List, Level, Arto):-
+	write('Welk dier denk je dat het is?\n'),
+	read(Guess),
+	Choice = Guess,!,
+	write('Gefeliciteerd, u heeft het goed!\n'),
+	Newlevel is Level+1,
+	Newarto is Arto+20,
+	write('Ik neem een nieuw dier\n'),
+	generateanimal(List, Newchoice, Rest),
+	givehint(Newchoice, 5, _),
+	write('Wil je raden of een hint kopen?\nTyp raad\. of hint\.\n'),
+	read(X),
+	artisquestion(X, Newchoice, Rest, Newlevel, Newarto)
+	;
+	write('Dit was helaas niet het goede antwoord\n'),
+	Newarto is Arto-5,
+	write('Wil je nog een keer raden of toch maar een hint kopen?\nTyp raad\. of hint\.\n'),
+	read(X),
+	artisquestion(X, Choice, Rest, Level, Newarto).
+	
+
+artisquestion(hint, Choice, List, Level, Arto):-
+	!,
+	write('U wilt een hint kopen\nDat kan uit 5 categorieen:\n'),
+	write('1\. In welke familie zit het dier?          Kosten: 15 Arto\n'),
+	write('2\. Kleuren van dier?                       Kosten: 12 Arto\n'),
+	write('3\. In welk verblijf zit het dier?          Kosten: 10 Arto\n'),
+	write('4\. Wat voor eigenschappen heeft het dier?  Kosten:  7 Arto\n'),
+	write('5\. Een willekeurige hint?                  Kosten:  5 Arto\n'),
+	read(X),
+	givehint(Choice, X, Cost),
+	Newarto is Arto-Cost,
+	write('Wil je raden of een hint kopen?\nTyp raad\. of hint\.\n'),
+	read(Y),
+	artisquestion(Y, Choice, List, Level, Newarto).
+	
+	
+artisquestion(stop, Choice, _List, Level, Arto):-
+	!,
+	writef('U was op level %w en u had nog %w Arto\'s over\nHet dier wat u als laatst zocht was een %w\n',[Level,Arto,Choice]).
+	
+artisquestion(Fail, Choice, List, Level, Arto):-
+	writef('%w is niet een optie, probeer opnieuw:\nTyp raad\. of hint\.\n',[Fail]),
+	read(X),
+	artisquestion(X, Choice, List, Level, Arto).
+
+generateanimal(List, Choice, Rest):-
+	length(List, Remain),
+	No is random(Remain),
+	generator(List, No, Choice),
+	select(Choice, List, Rest).
+
+generator([H|_], 0, H):-!.
+
+generator([_|List], No, Choice):-
+	New is No-1,
+	generator(List, New, Choice).
+
+generateanimal([],_,_):-
+	write('U heeft het spel uitgespeeld\nU kunt uwzelf nu koning van Artis noemen\n').
+
+givehint(Animal, 1, 15):-
+	write('Hint uit categorie 1:\n'),
+	isfam(Animal, Fam),
+	vind_level(Fam, 3),
+	writef('Het dier zit in de familie van %w\n',[Fam]).
+
+givehint(Animal, 2, 12):-
+	write('Hint uit categorie 2:\n'),
+	findall(Color, hasprop(Animal, kleur, Color), Colors),
+	write('Het dier heeft de volgende kleuren:\n'),
+	showcolors(Colors),nl.
+
+showcolors([]):-!.
+
+showcolors([H|T]):-
+	write(H),tab(1),
+	showcolors(T).
+
+givehint(Animal, 3, 10):-
+	write('Hint uit categorie 3:\n'),
+	hasprop(Animal, verblijf, No),
+	writef('Het dier zit in verblijf %w\n',[No]).
+
+givehint(Animal, 4, 7):-
+	write('Hint uit categorie 4:\n'),
+	hasprop(Animal, knuffact, X),
+	hasprop(Animal, grootte_orde, Y),
+	writef('Het dier is %w en %w\n', [X,Y]).
+
+givehint(Animal, 5, 5):-
+	write('Hint uit categorie 5:\n'),
+	hasprop(Animal, X, Y),
+	X \= naam,
+	X \= latijn,
+	X \= verblijf,
+	X \= kleur,
+	X \= knuffact,
+	X \= grootte_orde,
+	writef('Het dier heeft als eigenschap %w, de waarde %w\n', [X,Y]).
+% Algoritmes om nieuwe gebruikersprofielen van bezoekers te
+% te maken, oude profielen aan te passen en te verwijderen, 
+% en een lijst op te vragen met eigenschappen.
+
+
+
+
+% user_add = voeg user toe met eigenschappen
+user_add(Naam, Eigenschappen) :-
+	assert(isa(Naam, bezoeker)),
+	user_addprop(Naam, Eigenschappen).
+
+user_addprop(_, []).
+user_addprop(Naam, [Eigenschap/Waarde|Eigenschappen]) :-
+	assert(prop(Naam, Eigenschap, Waarde)),
+	user_addprop(Naam, Eigenschappen).
+
+
+user_del(Naam) :-
+	item_exists(Naam, 1),
+	isa(Naam, bezoeker),
+	retract(isa(Naam, bezoeker)),
+	retractall(prop(Naam, _, _)).
+
+
+
+
+% item_exists(Naam, 0_of_1)
+% controleren of item met naam Naam bestaat
+item_exists(Naam, 1) :-
+	isa(Naam, _),
+	!.
+
+item_exists(_, 0).
+
+
+
+% krijg lijst met alle eigenschappen van bezoeker
+user_getprops(Naam, Props) :-
+	item_exists(Naam, 1),
+	isa(Naam, bezoeker),
+	findall(Eig/Waarde, prop(Naam, Eig, Waarde), Props).
+
+
+
+
+% en nog iets om alles op te slaan in de database...
+% Derive uit bezoekersbestand
+% Auteur: Robrecht Jurriaans
+
+userpref(X, List):-
+	isa(X, bezoeker),
+	derive(X, Animals),
+	putinone(Animals, Tmp),
+	pickanimal(Tmp, [], Tmp2),
+	eigenwil(X, Tmp2, Tmp3),       % Eigen wil van systeem (system is sentient, friggin python)
+	remdup(Tmp3, Tmp4),
+%	level_filter(Tmp4, 4, Tmp5),
+	anitono(Tmp4, List).
+
+derive(X, List):-
+	prop(X, diereigenschappen, Atts),
+	zetomnaardier(Atts, [], List).
+
+zetomnaardier([], X, X):-!.
+
+zetomnaardier([Eig/Waarde|T], Crt, List):-
+	findall(Animal, prop(Animal, Eig, Waarde), List1),
+	zetomnaardier(T, [List1|Crt], List).
+
+putinone([H, H2|T], Crt):-
+	!,
+	append(H,H2, H3),
+	putinone([H3|T], Crt).
+
+putinone([H], H):-!.
+
+
+pickanimal([], X, X):-!.
+
+pickanimal([H|T], Crt, List):-
+	memberchk(H, T),!,
+	pickanimal(T, [H|Crt], List).
+
+pickanimal([_|T], Crt, List):-
+	pickanimal(T, Crt, List).
+
+
+eigenwil(User, Tmp4, List):-
+	willeeftijd(User, Tmp4, Tmp5),
+	wilspecifiek(Tmp5, Tmp6),
+%	write(Tmp5),nl,
+%	write(Tmp6),nl,
+	wilkleur(User, Tmp6, List).
+	
+	
+willeeftijd(User, Tmp4, Tmp5):-
+	prop(User, geboortejaar, Birth),
+	global_var(datum_jaar, Year),
+	Age is Year-Birth,
+	agepick(Age, Tmp4, Tmp5).
+
+agepick(Age, Tmp4, [tijger|Tmp4]):-
+	Age < 15,!.
+agepick(Age, Tmp4, [leeuw|Tmp4]):-
+	Age < 30,!.
+agepick(_, Tmp4, [olifant|Tmp4]).
+
+
+wilspecifiek(Tmp5, List2):-
+	global_var(datum_jaar, Year),
+	findall(Animal, jongdier(Year, Animal), List),
+	makeanimal(List, Tmp6),
+	append(Tmp6, Tmp5, List2).
+
+jongdier(Year, Animal):-
+	prop(Animal, geboorte,  _/_/Birth),
+	X is Year-Birth,
+	X =< 1.
+
+makeanimal([], []):-!.
+
+makeanimal([H|T], [Animal|Rest]):-
+	isa(H, Animal),
+	makeanimal(T, Rest).
+
+
+wilkleur(User, Tmp6, List):-
+	findall(Color, prop(User, lievelingskleur, Color), Colors),
+	colorpick(Colors, [], Colorlist),
+	append(Colorlist, Tmp6, List).
+
+colorpick([], List, List):-!.
+
+colorpick([H|T], Crt, List):-
+	findall(Animal, prop(Animal, kleur, H), Colorani),
+	append(Colorani, Crt, New),
+	colorpick(T, New, List).
+
+
+
+
+
+
+
+
+
+
+geefinfo:-
+  getuser(Gebruiker),
+  getanimal(Dier),
+  getuserprops(Gebruiker, Props),
+  geefinfo(Dier, Props).
+
+getuser(Gebruiker):-
+  writef('Wie ben je?\n'),
+  read(Gebruiker).
+
+getanimal(Dier):-
+  writef('Over welk dier wil je informatie hebben?\n'),
+  read(Dier).
+
+geefinfo(Dier, [Weergave, Verbositeit]):-
+  zoek_attributen(Dier, Attrib),
+  verbos(Verbositeit, GewensteEigenschappen),
+  verbos_stripper(Attrib, GewensteEigenschappen, [], NewAttrib),
+  printinfo(NewAttrib, Weergave).
+  
+niveau(dom, [naam, verblijf, eten, knuffact, grootte_orde]).
+niveau(normaal, [naam, verblijf, kleur, eten, gewicht, grootte, grootte_orde]).
+niveau(ontwikkeld, [naam, latijn, verblijf, kleur, gewicht, grootte, eten, voortbewegen, knuffact, grootte_orde]).
+
+verbos_stripper([], _, NewAttrib, NewAttrib):-
+  !.
+
+verbos_stripper([Eigenschap/Waarde | Tail], GewEig, Accum, NewAttrib):-
+  select(Eigenschap, GewEig, Rest), !,
+  verbos_stripper(Tail, Rest, [Eigenschap/Waarde | Accum], NewAttrib).
+
+verbos_stripper([Eigenschap/_ | Tail], GewEig, Accum, NewAttrib):-
+  \+ member(Eigenschap, GewEig), !,
+  verbos_stripper(Tail, GewEig, Accum, NewAttrib).
+
+printinfo([], _):-
+  !.
+
+printinfo([Eigenschap/Waarde | Tail], tabel):-
+  writef('%15l: %w\n', [Eigenschap, Waarde]),
+  printinfo(Tail, tabel).
+
+getuserprops(Gebruiker, [Weergave, Niveau]):-
+  usergetprops(Gebruiker, Props),
+  member(opmaak/Weergave, Props),
+  member(niveau/Niveau, Props).
+% Communicatieve interactie
+% 
+% Artis project
+%
+% alg_dieropattribuut.pl, v0.3
+%
+% Moos Hueting: match_attributen, match_attribuut, vergelijk_lijsten,
+% zoek_dier_op_attribuut, krijg_attributen, proces_attribuut.
+%
+% v0.2: match_attribuut aangepast dat hij alleen dieren vindt van level 4, met
+% behulp van predicaat level_filter.
+%
+% v0.3: match_attribuut aangepast dat hij vindt op een gespecificeerd niveau.
+%
+% Gegeven een lijst met eigenschappen van een dier, zoek de dieren erbij die aan
+% deze eigenschappen voldoen.
+
+
+% he, niet binnen de files andere files consulten gekkie!
+% je kan beter load_everything consulten en van daaruit werken.
+% anders komen er van die vervelende loops, en dubbele facts.
+%:- include('alg_overerving.pl').
+%:- include('alg_vindlevel.pl').
+
+
+% Zoek bij een gegeven eigenschap/value combinatie een lijst met dieren die deze
+% eigenschap hebben.
+
+match_attribuut(Eigenschap/Value, DierLijst, Level):-
+  findall(Dier, hasprop(Dier, Eigenschap, Value), DierLijstZonderFilter),
+  level_filter(DierLijstZonderFilter, Level, DierLijst).
+
+match_attributen([], MatchLijst, MatchLijst, _):-
+  !.
+match_attributen([Head|Tail], [], EindLijst, Level):-
+  !,
+  match_attribuut(Head, MatchLijst, Level),
+  match_attributen(Tail, MatchLijst, EindLijst, Level).
+
+% Maak een lijst met dieren met een bepaalde attribuut en match deze lijst tegen
+% de lijst met dieren van de vorige attribu(u)t(en).
+
+match_attributen([Head|Tail], MatchLijst, EindLijst, Level):-
+  match_attribuut(Head, DierLijst, Level),
+  vergelijk_lijsten(DierLijst, MatchLijst, NMatchLijst),
+  match_attributen(Tail, NMatchLijst, EindLijst, Level).
+
+vergelijk_lijsten(Lijst1, Lijst2, ResLijst):-
+  vergelijk_lijsten(Lijst1, Lijst2, [], RevResLijst),
+  reverse(RevResLijst, ResLijst).
+
+% Als een element uit 
+vergelijk_lijsten([Head|Tail], Lijst2, AccumLijst, ResLijst):-
+  select(Head, Lijst2, NLijst2), !,
+  vergelijk_lijsten(Tail, NLijst2, [Head | AccumLijst], ResLijst).
+
+vergelijk_lijsten([Head|Tail], Lijst2, AccumLijst, ResLijst):-
+  \+ member(Head, Lijst2), !,
+  vergelijk_lijsten(Tail, Lijst2, AccumLijst, ResLijst).
+
+vergelijk_lijsten([], _, AccumLijst, AccumLijst):-
+  !.
+
+vergelijk_lijsten(_, [], AccumLijst, AccumLijst).
+
+zoek_dier_op_attribuut:-
+  krijg_attributen(LijstAttr),
+  match_attributen(LijstAttr, [], EindLijst, 4),
+  write('De gevonden dieren zijn:'),
+  write(EindLijst).
+  
+krijg_attributen(Result):-
+  writef('Geef een lijst met attributen van het dier in het format eigenschap/value.\n'),
+  writef('Wanneer je klaar bent, geef je \'klaar\'.\n'),
+  krijg_attr([], Result).
+
+krijg_attr(Lijst, Result):-
+  read(Attr),
+  proces_attribuut(Attr, Lijst, Result).
+
+proces_attribuut(klaar, Lijst, Lijst):-
+  !.
+
+proces_attribuut(Attr, Lijst, Result):-
+  NewLijst = [Attr | Lijst],
+  krijg_attr(NewLijst, Result).
+
+% Communicatieve interactie
+% 
+% Artis project
+%
+% alg_dieropattribuut.pl, v0.1
+%
+% Moos Hueting: match_attributen, match_attribuut, vergelijk_lijsten,
+% zoek_dier_op_attribuut, krijg_attributen, proces_attribuut.
+%
+% Gegeven een lijst met eigenschappen van een dier, zoek de dieren erbij die aan
+% deze eigenschappen voldoen.
+
+:- include('dieren.pl').
+:- include('alg_overerving.pl').
+
+% Zoek bij een gegeven eigenschap/value combinatie een lijst met dieren die deze
+% eigenschap hebben.
+
+match_attribuut(Eigenschap/Value, DierLijst):-
+  findall(Dier, hasprop(Dier, Eigenschap, Value), DierLijst).
+
+match_attributen([], MatchLijst, MatchLijst):-
+  !.
+match_attributen([Head|Tail], [], EindLijst):-
+  !,
+  match_attribuut(Head, MatchLijst),
+  match_attributen(Tail, MatchLijst, EindLijst).
+
+% Maak een lijst met dieren met een bepaalde attribuut en match deze lijst tegen
+% de lijst met dieren van de vorige attribu(u)t(en).
+
+match_attributen([Head|Tail], MatchLijst, EindLijst):-
+  match_attribuut(Head, DierLijst),
+  vergelijk_lijsten(DierLijst, MatchLijst, NMatchLijst),
+  match_attributen(Tail, NMatchLijst, EindLijst).
+
+vergelijk_lijsten(Lijst1, Lijst2, ResLijst):-
+  vergelijk_lijsten(Lijst1, Lijst2, [], RevResLijst),
+  reverse(RevResLijst, ResLijst).
+
+% Als een element uit 
+vergelijk_lijsten([Head|Tail], Lijst2, AccumLijst, ResLijst):-
+  select(Head, Lijst2, NLijst2), !,
+  vergelijk_lijsten(Tail, NLijst2, [Head | AccumLijst], ResLijst).
+
+vergelijk_lijsten([Head|Tail], Lijst2, AccumLijst, ResLijst):-
+  \+ member(Head, Lijst2), !,
+  vergelijk_lijsten(Tail, Lijst2, AccumLijst, ResLijst).
+
+vergelijk_lijsten([], _, AccumLijst, AccumLijst):-
+  !.
+
+vergelijk_lijsten(_, [], AccumLijst, AccumLijst).
+
+zoek_dier_op_attribuut:-
+  krijg_attributen(LijstAttr),
+  match_attributen(LijstAttr, [], EindLijst),
+  write('De gevonden dieren zijn:'),
+  write(EindLijst).
+  
+krijg_attributen(Result):-
+  writef('Geef een lijst met attributen van het dier in het format eigenschap/value.\n'),
+  writef('Wanneer je klaar bent, geef je \'klaar\'.\n'),
+  krijg_attr([], Result).
+
+krijg_attr(Lijst, Result):-
+  read(Attr),
+  proces_attribuut(Attr, Lijst, Result).
+
+proces_attribuut(klaar, Lijst, Lijst):-
+  !.
+
+proces_attribuut(Attr, Lijst, Result):-
+  NewLijst = [Attr | Lijst],
+  krijg_attr(NewLijst, Result).
+
+info(Animal) :-
+	get_type(Animal, TypeList),
+	write('Dit dier behoort tot de volgende typen:\n'),
+	show_list(TypeList),
+	nl,	sleep(1),
+	get_cleaning(Animal, MatList, StepList),
+	writef('Om het verblijf van een %w schoon te maken zijn de volgende materialen nodig:\n', [Animal]),
+	show_list(MatList),
+	nl,	sleep(1),
+	write('Voor het schoonmaken zijn de volgende stappen nodig:\n'),
+	show_list(StepList),
+	nl, sleep(1),
+	voer(Animal).
+
+get_type(Animal, TypeList) :-
+	findall(Type, isfam(Animal, Type), TypeList).
+
+get_cleaning(Animal, MatList, StepList) :-
+	prop(Animal, verblijf, Loc),
+	get_danger_a(Animal, Gevaarlijk),
+	isa(Loc, Type),
+	get_nachthok(Loc, Nachthok),
+	verzamel_materialen(Type, MList),
+	danger_mat(MList, Gevaarlijk, Nachthok, MatList),
+	stel_veilig(Gevaarlijk, Nachthok, SafeList),
+	maak_schoon(Type, CleanList),
+	sluit_af(Gevaarlijk, Nachthok, LockList),
+	append([SafeList, CleanList, LockList], StepList).
+
+info(Animal1, Animal2) :-
+	Animal1 = Animal2,
+	!,
+	write('Deze dieren zijn hetzelfde.\n'),
+	info(Animal1).
+
+info(Animal1, Animal2) :-
+	info_type(Animal1, Animal2),
+	nl, sleep(1),
+	info_cleaning(Animal1, Animal2),
+	nl, sleep(1),
+	info_feeding(Animal1, Animal2).
+
+verschillen(L1, L2, Only1, Only2) :-
+	findall(X, (member(X, L1), \+ member(X, L2)), Only1),
+	findall(X, (member(X, L2), \+ member(X, L1)), Only2).
+
+info_type(Animal1, Animal2) :-
+	get_type(Animal1, List1),
+	writef('De %w valt onder de volgende klassen:\n', [Animal1]),
+	show_list(List1),
+	get_type(Animal2, List2),
+	writef('De %w valt onder de volgende klassen:\n', [Animal2]),
+	show_list(List2),
+	vergelijk_lijsten(List1, List2, CList),
+	write('Ze komen overeen in de volgende klassen:\n'),
+	show_list(CList).
+
+info_cleaning(Animal1, Animal2) :-
+	get_cleaning(Animal1, MatList1, StepList1),
+	get_cleaning(Animal2, MatList2, StepList2),
+	info_mat(Animal1, Animal2, MatList1, MatList2),
+	info_steps(Animal1, Animal2, StepList1, StepList2).
+
+info_mat(_, _, MatList1, MatList2) :-
+	verschillen(MatList1, MatList2, [], []),
+	!,
+	vergelijk_lijstenvergelijk_lijsten(MatList1, MatList2, List),
+	print_ov(mat, List).
+
+info_mat(Animal1, Animal2, MatList1, MatList2) :-
+	vergelijk_lijsten(MatList1, MatList2, List),
+	print_ov(mat, List),
+	verschillen(MatList1, MatList2, MatOnly1, MatOnly2),
+	print_versch(mat, Animal1, MatOnly1),
+	print_versch(mat, Animal2, MatOnly2).
+
+
+info_steps(_, _, StepList1, StepList2) :-
+	verschillen(StepList1, StepList2, [], []),
+	!,
+	vergelijk_lijsten(StepList1, StepList2, List),
+	print_ov(step, List).
+
+info_steps(Animal1, Animal2, StepList1, StepList2) :-
+	vergelijk_lijsten(StepList1, StepList2, List),
+	print_ov(step, List),
+	verschillen(StepList1, StepList2, StepOnly1, StepOnly2),
+	print_versch(step, Animal1, StepOnly1),
+	print_versch(step, Animal2, StepOnly2).
+
+
+info_feeding(Animal1, Animal2) :-
+	get_feeding(Animal1, Gev1, _, Eetg1, Hoev1, Srt1),
+	get_feeding(Animal2, Gev2, _, Eetg2, Hoev2, Srt2),
+	info_eetg(Animal1, Animal2, Eetg1, Eetg2),
+	info_srt(Animal1, Animal2, Srt1, Srt2),
+	info_hoev(Animal1, Animal2, Hoev1, Hoev2),
+	info_gev(Animal1, Animal2, Gev1, Gev2).
+
+info_eetg(_, _, Eetg1, Eetg2) :-
+	Eetg1 = Eetg2,
+	!,
+	writef('Beide dieren zijn %w.\n', [Eetg1]).
+info_eetg(Animal1, Animal2, Eetg1, Eetg2) :-
+	writef('De %w is een %w, maar de %w is een %w.\n', [Animal1, Eetg1, Animal2,
+		Eetg2]).
+
+info_srt(_, _, Srt1, Srt2) :-
+	verschillen(Srt1, Srt2, [], []),
+	!,
+	vergelijk_lijsten(Srt1, Srt2, List),
+	print_ov(srt, List).
+info_srt(Animal1, Animal2, Srt1, Srt2) :- 
+	vergelijk_lijsten(Srt1, Srt2, List),
+	print_ov(srt, List),
+	verschillen(Srt1, Srt2, Only1, Only2),
+	print_versch(srt, Animal1, Only1),
+	print_versch(srt, Animal2, Only2).
+
+
+info_hoev(_, _, Hoev1, Hoev2) :-
+	Hoev1 = Hoev2,
+	!,
+	writef('Beide dieren krijgen %w te eten.\n', [Hoev1]).
+info_hoev(Animal1, Animal2, Hoev1, Hoev2) :-
+	writef('De %w krijgt %w te eten en de %w krijgt %w te eten.\n', [Animal1, 
+		Hoev1, Animal2, Hoev2]).
+
+info_gev(_, _, gevaarlijk, gevaarlijk) :-
+	!,
+	write('Beide dieren zijn gevaarlijk. Het eten dient bij beide van een 
+		afstand in de kooi gegooid te worden.\n').
+info_gev(_, _, ongevaarlijk, ongevaarlijk) :-
+	!,
+	write('Beide dieren zijn ongevaarlijk. Het eten kan in de verblijven gelegd worden.\n').
+info_gev(Animal1, Animal2, Gev1, Gev2) :-
+	writef('De %w is %w. ', [Animal1, Gev1]),
+	print_dng(Animal1, Gev1),
+	writef('De %w is %w. ', [Animal2, Gev2]),
+	print_dng(Animal2, Gev2).
+
+print_dng(Animal, gevaarlijk) :-
+	!,
+	writef('Zijn of haar eten dient daarom van een afstand in het verblijf gegooid te worden.\n', [Animal]).
+print_dng(Animal, _) :-
+	writef('Zijn of haar eten kan daarom in het verblijf gelegd worden.\n', [Animal]).
+
+
+print_ov(_, []) :- !.
+
+print_ov(mat, List) :-
+	write('Voor het schoonmaken van de verblijven van beide dieren zijn de volgende materialen nodig:\n'),
+	show_list(List).
+
+print_ov(step, List) :-
+	write('Voor het schoonmaken van de verblijven van beide dieren zijn de volgende stappen nodig:\n'),
+	show_list(List).
+
+print_ov(srt, List) :-
+	write('Beide dieren krijgen het volgende te eten:\n'),
+	show_list(List).
+
+
+print_versch(_, _, []) :- !.
+
+print_versch(mat, Animal, List) :-
+	writef('Voor de %w zijn de volgende materialen nodig:\n',
+		[Animal]),
+	show_list(List).
+
+print_versch(step, Animal, List) :-
+	writef('Voor de %w zijn de volgende stappen nodig:\n',
+		[Animal]),
+	show_list(List).
+
+print_versch(srt, Animal, List) :-
+	writef('De %w krijgt:\n', [Animal]),
+	show_list(List).
+
+
+% Communicatieve interactie
+% Overerving
+% v0.1
+%
+% Moos Hueting: isa overerving
+% Robrecht Jurriaan: prop overerving (hoger nivo geldt ook voor lager nivo)
+% Martijn vd Veen: prop overruling (lager nivo kan hoger nivo uitschakelen)
+
+
+hasprop(Dier, Eigenschap, Waarde) :-
+  prop(Dier, Eigenschap, Waarde).
+
+hasprop(Dier, Eigenschap, Waarde) :-
+	isa(Dier, Voorouder),
+	hasprop(Voorouder, Eigenschap, Waarde),
+	\+ noprop(Dier, Eigenschap, Waarde).
+	% overruling werkt zo:
+	% je kan een specifieke eigenschap met spec. waarde
+	% uitzetten, door toe te voegen:
+	% noprop(pinguin, voortbewegen, vliegen).
+	% De andere waarden (bijv. dat een pinguin kan lopen)
+	% blijven gewoon behouden.
+
+isfam(X, Z):-
+  isa(X, Z).
+
+isfam(X, Z):-
+        isa(X, Y),
+	isfam(Y, Z).
+
+% Structurele redenering
+% Auteur: Robrecht Jurriaans
+% A* algoritme door Floris Linnenbank
+% Routeplanner
+% zoekalgoritme A*, heuristiek: straightline distance
+% routeplanner maakt gebruik van lijst van dieren waar men naartoe wilt
+% 
+% Robrecht Jurriaans: move/3, estimate/2, showpath/1
+%
+% v0.1: A* ingevoegd, estimate/2 en move/3 ge-implementeerd
+% * Wordt nog uitgebreid met showpath voor graphische weergave
+%
+% v0.2: showpath/1 ge-implementeerd, deze wordt nog uitgebreid met:
+% * Vloeiender taalgebruik in showpath/1
+%   - Herkennig van beginpositie
+%   - Herkennig van eindpunt
+%   - Informatie bij tussenstappen minder uitgebreid
+%   
+% v0.3:  
+
+
+solve_astar(State, Path/Cost):-
+	estimate(State, E),
+	astar([[State]/0/E],RPath/Cost/_),
+	reverse(RPath,Path).
+
+astar(Paths,Path):-
+	get_best(Paths,Path),
+	Path = [Node|_]/_/_,
+	goal(Node).
+
+astar(Paths,SolutionPath):-
+	get_best(Paths, BestPath),
+	select(BestPath, Paths, OtherPaths),
+	expand_astar(BestPath, ExpPaths),
+	append(OtherPaths, ExpPaths, NewPaths),
+	astar(NewPaths, SolutionPath).
+
+get_best([Path],Path):-
+	!.
+
+get_best([P1/C1/E1, _/C2/E2|Paths], BestPath):-
+	C1 + E1 =< C2 + E2,
+	!,
+	get_best([P1/C1/E1|Paths], BestPath).
+
+get_best([_|Paths],BestPath):-
+	get_best(Paths,BestPath).	
+
+move_astar([Node|Path]/C/_,
+		  [NewNode, Node|Path]/NewC/E):-
+	move(Node,NewNode, StepC),
+	\+ member(NewNode, Path),
+	NewC is C + StepC,
+	estimate(NewNode,E).
+
+expand_astar(Path,Exp):-
+	findall(New, move_astar(Path, New), Exp).
+
+% making the goal/1 predicate dynamic to be able to set it dynamically
+:- dynamic goal/1.
+
+routeplan(_, [], RevPath, Path):-
+	reverse(RevPath, Path),!.
+
+routeplan(Start, Currentlist, PathUntilNow, Path):-
+	route(Start, Currentlist, Route, _),
+	reverse(Route, [Found|_]),
+	select(Found, Currentlist, Newgoals),
+	routeplan(Found, Newgoals, [Route|PathUntilNow], Path).
+
+
+route(CityA, CityB, Path, Cost):-
+	set_goal(CityB),
+	solve_astar(CityA, Path/Cost).
+
+
+set_goal(GoalState):-
+	retractall(goal(_)),
+	go_asserta(GoalState).
+
+go_asserta([]):-!.
+
+go_asserta([H|T]):-
+	asserta(goal(H)),
+	go_asserta(T).
+
+% standard direction
+move(CityA, CityB, Cost):-
+	street(CityA, CityB, Cost).
+
+% reversed direction
+move(CityA, CityB, Cost):-
+	street(CityB, CityA, Cost).
+
+estimate(CityA, EstimatedCost):-
+	goal(CityB),
+	prop(CityA, loc, LatA/LongA),
+	prop(CityB, loc, LatB/LongB),
+	EstimatedCost is sqrt((LatA-LatB)^2 + (LongA-LongB)^2) * 75. 
+
+showpath([]):-
+	write('Dit is de uitgang\nVergeet u niet langs onze artis-shop te gaan?\ntot ziens\nP.S. typ ; voor een alternatieve route.\n'),!.
+
+showpath([H|T]):-
+	showtmp(H,1),
+	write('---------------------------------------------------------------------------------------------\n'),
+	showpath(T).
+
+showtmp([],_):-
+	write('uw volgende bestemming\n'),!.	
+
+showtmp([H|T],1):-
+	!,
+	prop(H, name, Name),
+        writef('U bent bij gebouw %w: %w, loopt u verder naar\n', [H,Name]),
+	showtmp(T,2).
+
+showtmp([H|T],X):-
+	residents(H, List),	
+	prop(H, name, Name),
+	writef('Gebouw %w, \"%w\" \nBewoners:\n', [H,Name]),
+	showresidents(List),
+	write('Loopt u verder naar\n'),
+	showtmp(T,X).
+
+residents(H, List):-
+	findall(Animal, hasprop(Animal, verblijf, H), Residents),
+	clearunspecific(Residents, [], List).
+
+clearunspecific([], List, List):-!.
+
+clearunspecific([H|Tail], Crt, List):-
+	prop(H, specific, _),!,
+	clearunspecific(Tail, [H|Crt], List).
+
+clearunspecific([_H|Tail], Crt, List):-
+	clearunspecific(Tail, Crt, List).
+
+showresidents([]):-!.
+
+showresidents([H|Tail]):-
+	isa(H, Animal),
+	hasprop(H, geboorte, Birth),
+	hasprop(H, geslacht, Gend),
+	writef('* %15l %20l is geboren op %15l en is een %w\n', [Animal, H, Birth, Gend]),
+	showresidents(Tail).
+% Statistiek meters
+% Auteur: Robrecht Jurriaans
+
+statbuilding(No, List):-
+	\+ var(No),
+	findall(Att/Val, hasprop(No, Att, Val), List).
+
+specifybuild(No):-
+	\+ var(No),	
+	statbuilding(No, List),
+	prop(No, name, Name),
+	isa(No, Type),
+	writef('Stats for %w, %w\n',[No, Name]),
+	writef('Type verblijf       : %w\n', [Type]),
+	startprint(List),!.
+
+
+
+startprint([]):-!.
+
+startprint([Att/Val|Tail]):-
+	\+ memberchk(Att/_, Tail),
+        !,
+	writef('%20l: %1l\n',[Att, Val]),
+	startprint(Tail).
+
+startprint([Att/Val|Tail]):-
+	select(Att/Val2, Tail, Newtail),
+	writef('%20l: %w en %w\n',[Att, Val, Val2]),
+	startprint(Newtail).
+	
+exactbuild(No, No2:Building):-
+	statbuilding(No, Attlist),
+	select(loc/_, Attlist, Atts),
+	isfam(No2, gebouw),
+	number(No2),
+	statbuilding(No2, Attlist2),
+	select(loc/_, Attlist2, Atts2),
+	compareatts(Atts, Atts2),
+	prop(No2, name, Building).
+
+comparebuild(No, Amount, No2:Building):-
+	statbuilding(No, Attlist),
+	select(loc/_, Attlist, Atts),
+	isfam(No2, gebouw),
+	number(No2),
+	statbuilding(No2, Attlist2),
+	select(loc/_, Attlist2, Atts2),
+	compareatts(Amount, Atts, Atts2, Listing),
+	write(Listing),
+	prop(No2, name, Building).
+
+% Compare attributes,
+% succes als alle attributen gelijk zijn
+compareatts(_, []):-!.
+
+compareatts(Att, [H/Val|Tail]):-
+	memberchk(H/Val, Att),!,
+	compareatts(Att, Tail).
+
+% Compare attributes met amount
+% succes als het benodigd aantal overeenkomingen behaald wordt
+compareatts(Count,_,[], []):-
+	Count =< 0,
+	!.
+
+compareatts(Count, Att, [H/Val|Tail], [H/Val|Rest]):-
+	Count >= 0,
+	memberchk(H/Val, Att),!,
+	Newc is Count-1,
+	compareatts(Newc, Att, Tail, Rest).
+
+compareatts(Count, Att, [_|Tail], Rest):-
+	compareatts(Count, Att, Tail, Rest).
+
+count(X,X).
+
+count(X, Y):-
+	X < 100,
+	X2 is X+1,
+	count(X2, Y).
+	
+% Communicatieve interactie
+% 
+% Artis project
+%
+% alg_vindgelijkendedieren.pl, v0.1
+%
+% Moos Hueting: vraag_welke_eigenschappen, filter_attributen,
+% vind_matchende_dieren.
+%
+% vraag_welke_eigenschappen: kleine interface die vraagt welke
+% eigenschappen gematched moeten worden.
+%
+% filter_attributen: laat uit lijst met eigenschap/waarde values alleen de
+% paren door waarvan eigenschap ook in Eigenschappen voor komt.
+%
+% vind_matchende_dieren: vindt alle dieren die voldoen aan dezelfde
+% waardes voor de gegeven eigenschappen van het gegeven dier.
+%
+
+vraag_welke_eigenschappen(Dier, AttrList):-
+  findall(Eigenschap, hasprop(Dier, Eigenschap, _), EigList),
+  writef('De entiteit \'%q\' heeft de volgende eigenschappen:\n', [Dier]),
+  write(EigList), nl,
+  writef('Geef de eigenschappen waar je op wilt matchen:\n'),
+  read(GewensteEigenschappen),
+  zoek_attributen(Dier, Attributen),
+  filter_attributen(Attributen, GewensteEigenschappen, AttrList).
+
+filter_attributen([], _, []):-
+  !.
+
+% Als eigenschap member is van  Eigenschappen moet hij ook in de
+% uiteindelijke lijst komen, anders niet.
+
+filter_attributen([Eigenschap/Waarde|Tail], Eigenschappen, [Eigenschap/Waarde|FilterTail]):-
+  member(Eigenschap, Eigenschappen), !,
+  filter_attributen(Tail, Eigenschappen, FilterTail).
+
+filter_attributen([Eigenschap/_|Tail], Eigenschappen, FilterTail):-
+  \+ member(Eigenschap, Eigenschappen), !,
+  filter_attributen(Tail, Eigenschappen, FilterTail).
+
+% We willen alleen matchende entiteiten op hetzelfde niveau vinden,
+% vandaar vind_level.
+
+vind_matchende_dieren(Dier, Lijst):-
+  vind_level(Dier, Level),
+  vraag_welke_eigenschappen(Dier, AttrList),
+  match_attributen(AttrList, [], Lijst, Level).
+% Communicatieve interactie
+% 
+% Artis project
+%
+% alg_vindlevel.pl, v0.1
+%
+% Moos Hueting: vind_level, level_filter
+% Robrecht: specific (laagste level/onderste node in boom)
+%
+%
+% vind_level: vindt het niveau van een gegeven entiteit, bijvoorbeeld
+% zoogdier/2, kameel/4, etc.
+%
+% level_filter: filtert een lijst met entiteiten en geeft dan alleen de
+% entiteiten van level Level terug.
+
+
+specific(X):-
+        isa(X,_ ),
+        \+ isa(_, X).
+
+
+vind_level(dier, 1):-
+  !.
+
+vind_level(Ding, Level):-
+  isa(Ding, HogerDing),
+  vind_level(HogerDing, HogerLevel),
+  Level is HogerLevel + 1.
+
+level_filter([], _, []):-
+  !.
+
+level_filter([Head | Tail], Level, [Head | FilteredTail]):-
+  vind_level(Head, Level), !,
+  level_filter(Tail, Level, FilteredTail).
+
+level_filter([Head | Tail], Level, FilteredTail):-
+  \+ vind_level(Head, Level),
+  level_filter(Tail, Level, FilteredTail).
+
+zoek_attributen(Dier, Attributen):-
+  findall(Eigenschap/Waarde, hasprop(Dier, Eigenschap, Waarde), Attributen).
+% Database met gebruikers in Artis, met hun profiel
+% door: martijn van der veen
+
+% eigenschappen/[waarden]:
+%  geboortejaar/[jaar]
+%  niveau/[dom, normaal, ontwikkeld]
+%  opmaak/[verhaal, tabel]
+%  diereigenschappen/[lijstmeteigenschappen:[eigenschap/value]]
+%  houdt_van/[voederen, schoonmaken, eten]
+%  lievelingskleur/[kleur]
+
+
+
+isa(martijn, bezoeker).
+ prop(martijn, geboortejaar, 1989).
+ prop(martijn, niveau, ontwikkeld).
+ prop(martijn, opmaak, tabel).
+ prop(martijn, diereigenschappen, 
+[knuffact/knuffelbaar,grootte_orde/klein,grootte_orde/normaal,grootte_orde/groot,grootte_orde/huge,nodig/water,nodig/land]).
+ prop(martijn, houdt_van, voederen).
+ prop(martijn, lievelingskleur, oranje).
+
+
+
+isa(yta, bezoeker).
+ prop(yta, geboortejaar, 1985).
+ prop(yta, niveau, dom).	% dom, normaal, ontwikkeld
+ prop(yta, opmaak, verhaal).
+ prop(yta, diereigenschappen, 
+[knuffact/gevaarlijk,grootte_orde/groot,grootte_orde/huge,nodig/land]).
+ prop(yta, houdt_van, schoonmaken).
+ prop(yta, lievelingskleur, wit).
+
+
+isa(cmap, bezoeker).
+ prop(cmap, geboortejaar, 1813).
+ prop(cmap, niveau, normaal).
+ prop(cmap, opmaak, tabel).
+ prop(cmap, diereigenschappen, [knuffact/gevaarlijk,grootte_orde/huge,nodig/water,nodig/cmap]).
+ prop(cmap, houdt_van, cmap).
+ prop(cmap, lievelingskleur, wit).
+
+
+isa(leo, bezoeker).
+ prop(leo, geboortejaar, 1970).
+ prop(leo, niveau, ontwikkeld).
+ prop(leo, opmaak, verhaal).
+ prop(leo, diereigenschappen, [knuffact/knuffelbaar,grootte_orde/groot,grootte_orde/huge,nodig/land,nodig/water]).
+ prop(leo, houdt_van, voederen).
+ prop(leo, houdt_van, inparkeren).
+ prop(leo, lievelingskleur, oranje).
+ prop(leo, lievelingskleur, bruin).
+
+
+isa(robrecht, bezoeker).
+ prop(robrecht, geboortejaar, 1987).
+ prop(robrecht, niveau, ontwikkeld).
+ prop(robrecht, opmaak, tabel).
+ prop(robrecht, diereigenschappen, [knuffact/gevaarlijk, nodig/land,nodig/water]).
+ prop(robrecht, houdt_van, eten).
+ prop(robrecht, lievelingskleur, zwart).
+ prop(robrecht, lievelingskleur, blauw).
+:-
+	include('db_schoonmaak.pl').
+:-
+	include('db_voeding.pl').
+
+show_list([]).
+
+show_list([H|T]) :-
+	writef('- %w\n',[H]),
+	show_list(T).
+% Comunicatieve Interactie
+% Database - Dieren
+% versie 0.2
+%
+% Martijn: alles tot versie 0.1
+% Moos: Eigenschappen van klasses en subklasses toegevoegd.
+
+
+/*
+	Opmerkingen:
+	
+	* alle lagen zijn in enkelvoud (de namen)
+
+	* Eigenschappen van de dieren:
+		(hebben een interne naam, duidelijker dan nummer)
+		- naam (voluit)
+		- latijn (latijnse naam)
+		- verblijf (nummer)
+		- kleur
+		- gewicht (kg) <- echt opgezocht!! respect voor wikipedia
+		- grootte (cm, lengte oid) <- idem, maar geen respect voor apple
+		  NB: hulppredicaatje grootte_orde geeft orde van grootte in woorden (tiny, klein, medium, groot, huge)
+		- eten (omnivoor, carnivoor, herbivoor)
+		- voortbewegen (vliegen, zwemmen, lopen, rennen, klimmen)
+		- knuffelheidsfactor (gevaarlijk, neutraal, knuffelbaar, schattig)
+
+	* NIeT GeiMPLeMEnTeERD, wel leuk:
+		
+		MISSENDE DIEREN: Fazant, eend, pelikaan, krokodil, haai
+		- hokgrootte (m^2) (nodig voor verblijf per dier) -> uitrekenen hoeveel dieren per hok
+		- snelheid?
+		- gemiddelde leeftijd?
+		- aantal nakomelingen?
+		elk dier (samba, poemba) definieren, met hun eigenschappen
+		meerdere dieren per verblijf (dolfijn, vissen, etc)..
+
+
+	* Voorbeeld queries:
+
+		- lijst met alle dieren:
+		findall(C, (isa(A, dier), isa(B, A), isa(C, B)), Dieren), write(Dieren).
+		- vind dieren zonder een bepaalde eigenschap (zet binnen not()):
+		findall(C, (isa(A, dier), isa(B, A), isa(C, B), not(prop(C, naam, _))), Dieren), write(Dieren).
+		findall(C, (isa(A, dier), isa(B, A), isa(C, B), not(prop(C, voortbewegen, lopen))), Dieren), write(Dieren).
+
+
+
+
+*/
+
+
+
+:-	dynamic(isa/2).
+:-	dynamic(prop/3).
+
+
+
+
+
+/************ layer 1: dier  *****************************/
+
+
+
+/************ layer 2: klassen van dieren ************/
+isa(zoogdier, dier).
+isa(reptiel, dier).
+isa(vogelachtig, dier).
+isa(visachtig, dier).
+
+
+/*********** layer 3: subklassen van klassen *********/
+% zoogdieren
+isa(roofdier, zoogdier).
+isa(slurfdier, zoogdier).
+isa(onevenhoevige, zoogdier).
+isa(evenhoevige, zoogdier).
+isa(knaagdier, zoogdier).
+isa(primaat, zoogdier).
+isa(buideldier, zoogdier).
+
+% vogels
+isa(roofvogel, vogelachtig).
+isa(kraanvogelachtig, vogelachtig).
+isa(ooievaarachtig, vogelachtig).
+isa(hoender, vogelachtig).
+isa(watervogel, vogelachtig).
+isa(pinguinachtig, vogelachtig).
+
+% reptielen
+isa(krokodilachtig, reptiel).
+
+% vissen
+isa(haaiachtig, visachtig). % is eigenlijk geen subgroep, maar om diepte van boom te behouden deze 'hack'
+
+
+/*********** layer 4: dieren *************************/
+
+%% STRUCTUURBOOM
+
+isa(leeuw, roofdier).
+isa(wasbeer, roofdier).
+isa(wolf, roofdier).
+isa(olifant, slurfdier).
+isa(zebra, onevenhoevige).
+isa(tapir, onevenhoevige).
+isa(nijlpaard, evenhoevige).
+isa(kameel, evenhoevige).
+isa(lama, evenhoevige).
+isa(giraffe, evenhoevige).
+isa(springbok, evenhoevige).
+isa(bok, evenhoevige).
+isa(bever, knaagdier).
+isa(gibbon, primaat).
+isa(gorilla, primaat).
+isa(chimpansee, primaat).
+isa(bredeweg, primaat).
+isa(valk, roofvogel).
+isa(kraanvogel, kraanvogelachtig).
+isa(flamingo, ooievaarachtig).
+isa(ibis, ooievaarachtig).
+isa(kangoeroe, buideldier).
+isa(antilope, evenhoevige).
+isa(pinguin, pinguinachtig).
+isa(bizon, evenhoevige).
+isa(hyena, roofdier).
+isa(tijger, roofdier).
+isa(baviaan, primaat).
+isa(fazant, hoender).
+isa(eend, watervogel).
+isa(pelikaan, watervogel).
+isa(krokodil, krokodilachtig).
+isa(haai, haaiachtig).
+
+
+
+%% EIGENSCHAPPEN
+%
+/*********** layer 2: klasse ****************************/
+ prop(zoogdier, nodig, land).
+ prop(visachtig, nodig, water).
+ prop(vogelachtig, voortbewegen, vliegen).
+/*********** layer 3: subklasse *************************/
+ prop(watervogel, nodig, water).
+ noprop(pinguinachtig, voortbewegen, vliegen).
+/*********** layer 4: dieren ****************************/
+ prop(leeuw, naam, 'Leeuw').
+ prop(leeuw, latijn, 'Panthera leo').
+ prop(leeuw, verblijf, 26).
+ prop(leeuw, kleur, lichtbruin).
+ prop(leeuw, gewicht, 160).
+ prop(leeuw, grootte, 210).
+ prop(leeuw, eten, carnivoor).
+ prop(leeuw, voortbewegen, lopen).
+ prop(leeuw, voortbewegen, rennen).
+ prop(leeuw, knuffelheidsfactor, gevaarlijk).
+
+
+ prop(wasbeer, naam, 'Wasbeer').
+ prop(wasbeer, latijn, 'Procyon lotor').
+ prop(wasbeer, verblijf, 15).
+ prop(wasbeer, kleur, lichtbruin).
+ prop(wasbeer, gewicht, 12).
+ prop(wasbeer, grootte, 80).
+ prop(wasbeer, eten, carnivoor).
+ prop(wasbeer, voortbewegen, lopen).
+ prop(wasbeer, voortbewegen, klimmen).
+ prop(wasbeer, knuffelheidsfactor, knuffelbaar).
+
+
+
+ prop(wolf, naam, 'Alaska-wolf').
+ prop(wolf, latijn, 'Canis lupus arctos').
+ prop(wolf, verblijf, 11).
+ prop(wolf, kleur, wit).
+ prop(wolf, gewicht, 50).
+ prop(wolf, grootte, 120).
+ prop(wolf, eten, carnivoor).
+ prop(wolf, voortbewegen, lopen).
+ prop(wolf, voortbewegen, rennen).
+ prop(wolf, knuffelheidsfactor, gevaarlijk).
+
+
+
+ prop(olifant, naam, 'Indische olifant').
+ prop(olifant, latijn, 'Canis lupus arctos').
+ prop(olifant, verblijf, 23).
+ prop(olifant, kleur, grijs).
+ prop(olifant, gewicht, 5000).
+ prop(olifant, grootte, 500).
+ prop(olifant, eten, herbivoor).
+ prop(olifant, voortbewegen, lopen).
+ prop(olifant, knuffelheidsfactor, neutraal).
+
+
+
+ prop(zebra, naam, 'Grevyzebra').
+ prop(zebra, latijn, 'Equus grevyi').
+ prop(zebra, verblijf, 3).
+ prop(zebra, kleur, zwart).
+ prop(zebra, kleur, wit).
+ prop(zebra, gewicht, 400).
+ prop(zebra, grootte, 275).
+ prop(zebra, eten, herbivoor).
+ prop(zebra, voortbewegen, lopen).
+ prop(zebra, voortbewegen, rennen).
+ prop(zebra, knuffelheidsfactor, neutraal).
+
+
+
+ prop(tapir, naam, 'Indische tapir').
+ prop(tapir, latijn, 'Tapirus indicus').
+ prop(tapir, verblijf, 17).
+ prop(tapir, kleur, zwart).
+ prop(tapir, gewicht, 280).
+ prop(tapir, grootte, 200).
+ prop(tapir, eten, herbivoor).
+ prop(tapir, voortbewegen, lopen).
+ prop(tapir, knuffelheidsfactor, neutraal).
+
+
+
+ prop(nijlpaard, naam, 'Nijlpaard').
+ prop(nijlpaard, latijn, 'Hippopotamus amphibius').
+ prop(nijlpaard, verblijf, 18).
+ prop(nijlpaard, kleur, grijs).
+ prop(nijlpaard, gewicht, 2000).
+ prop(nijlpaard, grootte, 310).
+ prop(nijlpaard, eten, omnivoor).
+ prop(nijlpaard, voortbewegen, lopen).
+ prop(nijlpaard, voortbewegen, zwemmen).
+ prop(nijlpaard, knuffelheidsfactor, gevaarlijk).
+
+
+
+ prop(kameel, naam, 'Huiskameel').
+ prop(kameel, latijn, 'Camelus ferus').
+ prop(kameel, verblijf, 30).
+ prop(kameel, kleur, bruin).
+ prop(kameel, gewicht, 600).
+ prop(kameel, grootte, 200).
+ prop(kameel, eten, herbivoor).
+ prop(kameel, voortbewegen, lopen).
+ prop(kameel, knuffelheidsfactor, neutraal).
+
+
+
+ prop(lama, naam, 'Lama').
+ prop(lama, latijn, 'Lama glama').
+ prop(lama, verblijf, 14).
+ prop(lama, kleur, bruin).
+ prop(lama, gewicht, 140).
+ prop(lama, grootte, 170).
+ prop(lama, eten, herbivoor).
+ prop(lama, voortbewegen, lopen).
+ prop(lama, voortbewegen, rennen).
+ prop(lama, knuffelheidsfactor, neutraal).
+
+
+
+ prop(giraffe, naam, 'Netgiraffe').
+ prop(giraffe, latijn, 'Giraffa camelopardalis reticulata').
+ prop(giraffe, verblijf, 22).
+ prop(giraffe, kleur, bruin).
+ prop(giraffe, kleur, lichtbruin).
+ prop(giraffe, kleur, wit).
+ prop(giraffe, gewicht, 1700).
+ prop(giraffe, grootte, 500).
+ prop(giraffe, eten, herbivoor).
+ prop(giraffe, voortbewegen, lopen).
+ prop(giraffe, knuffelheidsfactor, neutraal).
+
+
+
+ prop(springbok, naam, 'Springbok').
+ prop(springbok, latijn, 'Antidorcas marsupialis').
+ prop(springbok, verblijf, 21).
+ prop(springbok, kleur, bruin).
+ prop(springbok, kleur, wit).
+ prop(springbok, gewicht, 40).
+ prop(springbok, grootte, 75).
+ prop(springbok, eten, herbivoor).
+ prop(springbok, voortbewegen, lopen).
+ prop(springbok, voortbewegen, rennen).
+ prop(springbok, knuffelheidsfactor, gevaarlijk).
+
+
+
+ prop(bok, naam, 'Alpensteenbok').
+ prop(bok, latijn, 'Capra ibex ibex').
+ prop(bok, verblijf, 5).
+ prop(bok, kleur, bruin).
+ prop(bok, gewicht, 95).
+ prop(bok, grootte, 140).
+ prop(bok, eten, herbivoor).
+ prop(bok, voortbewegen, lopen).
+ prop(bok, voortbewegen, rennen).
+ prop(bok, knuffelheidsfactor, gevaarlijk).
+
+
+
+ prop(bever, naam, 'Canadese bever').
+ prop(bever, latijn, 'Castor canadensis').
+ prop(bever, verblijf, 6).
+ prop(bever, kleur, bruin).
+ prop(bever, gewicht, 23).
+ prop(bever, grootte, 70).
+ prop(bever, eten, omnivoor).
+ prop(bever, voortbewegen, zwemmen).
+ prop(bever, voortbewegen, lopen).
+ prop(bever, knuffelheidsfactor, knuffelbaar).
+ prop(bever, nodig, water).
+
+
+
+ prop(gibbon, naam, 'Witwanggibbon').
+ prop(gibbon, latijn, 'Hylobates leucogenys').
+ prop(gibbon, verblijf, 4).
+ prop(gibbon, kleur, lichtbruin).
+ prop(gibbon, kleur, zwart).
+ prop(gibbon, gewicht, 35).
+ prop(gibbon, grootte, 120).
+ prop(gibbon, eten, omnivoor).
+ prop(gibbon, voortbewegen, lopen).
+ prop(gibbon, voortbewegen, klimmen).
+ prop(gibbon, knuffelheidsfactor, knuffelbaar).
+
+
+
+ prop(gorilla, naam, 'Westelijke laaglandgorilla').
+ prop(gorilla, latijn, 'gorilla gorilla gorilla').
+ prop(gorilla, verblijf, 16).
+ prop(gorilla, kleur, zwart).
+ prop(gorilla, gewicht, 80).
+ prop(gorilla, grootte, 155).
+ prop(gorilla, eten, omnivoor).
+ prop(gorilla, voortbewegen, lopen).
+ prop(gorilla, voortbewegen, klimmen).
+ prop(gorilla, knuffelheidsfactor, neutraal).
+
+
+
+ prop(chimpansee, naam, 'Chimpansee').
+ prop(chimpansee, latijn, 'Pan troglodytes').
+ prop(chimpansee, verblijf, 12).
+ prop(chimpansee, kleur, donkerbruin).
+ prop(chimpansee, gewicht, 50).
+ prop(chimpansee, grootte, 150).
+ prop(chimpansee, eten, omnivoor).
+ prop(chimpansee, voortbewegen, lopen).
+ prop(chimpansee, voortbewegen, klimmen).
+ prop(chimpansee, knuffelheidsfactor, neutraal).
+
+
+
+ prop(bredeweg, naam, 'Japanse slingerbredeweg').
+ prop(bredeweg, latijn, 'Optas cmaptos').
+ prop(bredeweg, verblijf, 12).
+ prop(bredeweg, kleur, blank).
+ prop(bredeweg, gewicht, 85).
+ prop(bredeweg, grootte, 180).
+ prop(bredeweg, eten, omnivoor).
+ prop(bredeweg, voortbewegen, lopen).
+ prop(bredeweg, voortbewegen, zwemmen).
+ prop(bredeweg, knuffelheidsfactor, gevaarlijk).
+
+
+
+ prop(valk, naam, 'Torenvalk').
+ prop(valk, latijn, 'Falco tinnunculus').
+ prop(valk, verblijf, 1).
+ prop(valk, kleur, rood).
+ prop(valk, kleur, bruin).
+ prop(valk, kleur, grijs).
+ prop(valk, gewicht, 0.5).
+ prop(valk, grootte, 30).
+ prop(valk, eten, carnivoor).
+ prop(valk, voortbewegen, vliegen).
+ prop(valk, knuffelheidsfactor, neutraal).
+
+
+
+ prop(kraanvogel, naam, 'Paradijskraanvogel').
+ prop(kraanvogel, latijn, 'Anthropoides paradiseus').
+ prop(kraanvogel, verblijf, 19).
+ prop(kraanvogel, kleur, grijs).
+ prop(kraanvogel, gewicht, 5).
+ prop(kraanvogel, grootte, 110).
+ prop(kraanvogel, eten, herbivoor).
+ prop(kraanvogel, voortbewegen, vliegen).
+ prop(kraanvogel, knuffelheidsfactor, neutraal).
+
+
+
+ prop(flamingo, naam, 'Chileense flamingo').
+ prop(flamingo, latijn, 'Phoenicopterus chilensis').
+ prop(flamingo, verblijf, 2).
+ prop(flamingo, kleur, roze).
+ prop(flamingo, gewicht, 15).
+ prop(flamingo, grootte, 120).
+ prop(flamingo, eten, carnivoor).
+ prop(flamingo, voortbewegen, lopen).
+ prop(flamingo, voortbewegen, vliegen).
+ prop(flamingo, knuffelheidsfactor, neutraal).
+
+
+
+ prop(ibis, naam, 'Rode ibis').
+ prop(ibis, latijn, 'Eudocimes ruber').
+ prop(ibis, verblijf, 10).
+ prop(ibis, kleur, rood). % ik zocht het nog op ook..
+ prop(ibis, gewicht, 0.7).
+ prop(ibis, grootte, 60).
+ prop(ibis, eten, carnivoor).
+ prop(ibis, voortbewegen, vliegen).
+ prop(ibis, knuffelheidsfactor, neutraal).
+
+
+
+ prop(kangoeroe, naam, 'Kangoeroe').
+ prop(kangoeroe, latijn, 'Macropodidae').
+ prop(kangoeroe, verblijf, 7).
+ prop(kangoeroe, kleur, bruin).
+ prop(kangoeroe, gewicht, 15).
+ prop(kangoeroe, grootte, 150).
+ prop(kangoeroe, eten, herbivoor).
+ prop(kangoeroe, voortbewegen, lopen).
+ prop(kangoeroe, voortbewegen, rennen).
+ prop(kangoeroe, knuffelheidsfactor, knuffelbaar).
+
+
+
+ prop(antilope, naam, 'Vierhoornantilope').
+ prop(antilope, latijn, 'Tetracerus quadricornis').
+ prop(antilope, verblijf, 8).
+ prop(antilope, kleur, bruin).
+ prop(antilope, gewicht, 19).
+ prop(antilope, grootte, 90).
+ prop(antilope, eten, herbivoor).
+ prop(antilope, voortbewegen, lopen).
+ prop(antilope, voortbewegen, rennen).
+ prop(antilope, knuffelheidsfactor, neutraal).
+
+
+
+ prop(pinguin, naam, 'Ezelspinguin').
+ prop(pinguin, latijn, 'Pygoscelis papua').
+ prop(pinguin, verblijf, 13).
+ prop(pinguin, kleur, zwart).
+ prop(pinguin, kleur, wit).
+ prop(pinguin, gewicht, 25).
+ prop(pinguin, grootte, 60).
+ prop(pinguin, eten, carnivoor).
+ prop(pinguin, voortbewegen, zwemmen).
+ prop(pinguin, voortbewegen, lopen).
+ prop(pinguin, knuffelheidsfactor, neutraal).
+
+
+
+ prop(bizon, naam, 'Europese bizon').
+ prop(bizon, latijn, 'Bison bonasus').
+ prop(bizon, verblijf, 20).
+ prop(bizon, kleur, bruin).
+ prop(bizon, gewicht, 800).
+ prop(bizon, grootte, 260).
+ prop(bizon, eten, herbivoor).
+ prop(bizon, voortbewegen, lopen).
+ prop(bizon, voortbewegen, rennen).
+ prop(bizon, knuffelheidsfactor, gevaarlijk).
+
+
+
+ prop(hyena, naam, 'Gevlekte hyena').
+ prop(hyena, latijn, 'Crocuta crocuta').
+ prop(hyena, verblijf, 24).
+ prop(hyena, kleur, bruin).
+ prop(hyena, kleur, lichtbruin).
+ prop(hyena, gewicht, 60).
+ prop(hyena, grootte, 140).
+ prop(hyena, eten, carnivoor).
+ prop(hyena, voortbewegen, lopen).
+ prop(hyena, voortbewegen, rennen).
+ prop(hyena, knuffelheidsfactor, gevaarlijk).
+
+
+
+ prop(tijger, naam, 'Siberische tijger').
+ prop(tijger, latijn, 'Panthera tigris altaica').
+ prop(tijger, verblijf, 25).
+ prop(tijger, kleur, oranje).
+ prop(tijger, kleur, zwart).
+ prop(tijger, kleur, wit).
+ prop(tijger, gewicht, 325).
+ prop(tijger, grootte, 205).
+ prop(tijger, eten, carnivoor).
+ prop(tijger, voortbewegen, lopen).
+ prop(tijger, voortbewegen, rennen).
+ prop(tijger, knuffelheidsfactor, gevaarlijk).
+
+
+
+ prop(baviaan, naam, 'Bruine baviaan').
+ prop(baviaan, latijn, 'Papio papio').
+ prop(baviaan, verblijf, 31).
+ prop(baviaan, kleur, bruin).
+ prop(baviaan, gewicht, 40).
+ prop(baviaan, grootte, 120).
+ prop(baviaan, eten, omnivoor).
+ prop(baviaan, voortbewegen, lopen).
+ prop(baviaan, voortbewegen, klimmen).
+ prop(baviaan, knuffelheidsfactor, knuffelbaar).
+
+
+ prop(fazant, naam, 'Edwards fazant').
+ prop(fazant, latijn, 'Lophura edwardsi').
+ prop(fazant, verblijf, 9).
+ prop(fazant, kleur, bruin).
+ prop(fazant, kleur, rood).
+ prop(fazant, gewicht, 2).
+ prop(fazant, grootte, 63).
+ prop(fazant, eten, omnivoor).
+ prop(fazant, voortbewegen, vliegen).
+ prop(fazant, knuffelheidsfactor, neutraal).
+
+
+ prop(eend, naam, 'Muskuseend').
+ prop(eend, latijn, 'Cairina moschata').
+ prop(eend, verblijf, 27).
+ prop(eend, kleur, zwart).
+ prop(eend, kleur, wit).
+ prop(eend, gewicht, 4).
+ prop(eend, grootte, 85).
+ prop(eend, eten, omnivoor).
+ prop(eend, voortbewegen, vliegen).
+ prop(eend, knuffelheidsfactor, neutraal).
+
+
+
+% TODO: Fazant, eend, pelikaan, krokodil, haai
+
+ prop(pelikaan, naam, 'Roze pelikaan').
+ prop(pelikaan, latijn, 'Pelecanus onocrotalus').
+ prop(pelikaan, verblijf, 28).
+ prop(pelikaan, kleur, wit).
+ prop(pelikaan, gewicht, 10).
+ prop(pelikaan, grootte, 155).
+ prop(pelikaan, eten, carnivoor).
+ prop(pelikaan, voortbewegen, vliegen).
+ prop(pelikaan, knuffelheidsfactor, neutraal).
+
+ prop(krokodil, naam, 'Nijlkrokodil').
+ prop(krokodil, latijn, 'Crocodylus niloticus').
+ prop(krokodil, verblijf, 29).
+ prop(krokodil, kleur, groen).
+ prop(krokodil, gewicht, 700).
+ prop(krokodil, grootte, 620).
+ prop(krokodil, eten, carnivoor).
+ prop(krokodil, voortbewegen, zwemmen).
+ prop(krokodil, voortbewegen, lopen).
+ prop(krokodil, knuffelheidsfactor, gevaarlijk).
+
+
+ prop(haai, naam, 'Luipaardhaai').
+ prop(haai, latijn, 'Triakis semifasciata').
+ prop(haai, verblijf, 32).
+ prop(haai, kleur, grijs).
+ prop(haai, gewicht, 32).
+ prop(haai, grootte, 210).
+ prop(haai, eten, carnivoor).
+ prop(haai, voortbewegen, zwemmen).
+ prop(haai, knuffelheidsfactor, gevaarlijk).
+
+
+
+
+
+
+
+
+/************ shortcuts  *****************************/
+
+
+prop(A, knuffact, B) :-
+ prop(A, knuffelheidsfactor, B).
+
+% grootte_orde: zet grootte (cm) om in orde van grootte
+% note: geeft dieren in volgorde van grootte
+prop(A, grootte_orde, tiny) :- prop(A, grootte, B), B < 30.
+prop(A, grootte_orde, klein) :- prop(A, grootte, B), B >= 30, B < 75.
+prop(A, grootte_orde, medium) :- prop(A, grootte, B), B >= 75, B < 200.
+prop(A, grootte_orde, groot) :- prop(A, grootte, B), B >= 200, B < 300.
+prop(A, grootte_orde, huge) :- prop(A, grootte, B), B > 300.
+
+% gewicht_orde: net zoiets? nodig?
+
+
+
+% Comunicatieve Interactie
+% Database - Dieren
+
+% VERSIEBEHEER:
+% v0.1 Martijn: dieren met 9 factoren toegevoegd
+
+
+
+/*
+	Opmerkingen:
+	
+	* alle lagen zijn in enkelvoud (de namen)
+
+	* Eigenschappen van de dieren:
+		(hebben een interne naam, duidelijker dan nummer)
+		- naam (voluit)
+		- latijn (latijnse naam)
+		- verblijf (nummer)
+		- kleur
+		- gewicht (kg) <- echt opgezocht!! respect voor wikipedia
+		- grootte (cm, lengte oid) <- idem, maar geen respect voor apple
+		  NB: hulppredicaatje grootte_orde geeft orde van grootte in woorden (tiny, klein, medium, groot, huge)
+		- eten (omnivoor, carnivoor, herbivoor)
+		- voortbewegen (vliegen, zwemmen, lopen, rennen, klimmen)
+		- knuffelheidsfactor (gevaarlijk, neutraal, knuffelbaar, schattig)
+
+	* NIeT GeiMPLeMEnTeERD, wel leuk:
+		
+		MISSENDE DIEREN: Fazant, eend, pelikaan, krokodil, haai
+		- hokgrootte (m^2) (nodig voor verblijf per dier) -> uitrekenen hoeveel dieren per hok
+		- snelheid?
+		- gemiddelde leeftijd?
+		- aantal nakomelingen?
+		elk dier (samba, poemba) definieren, met hun eigenschappen
+		meerdere dieren per verblijf (dolfijn, vissen, etc)..
+
+
+	* Voorbeeld queries:
+
+		- lijst met alle dieren:
+		findall(C, (isa(A, dier), isa(B, A), isa(C, B)), Dieren), write(Dieren).
+		- vind dieren zonder een bepaalde eigenschap (zet binnen not()):
+		findall(C, (isa(A, dier), isa(B, A), isa(C, B), not(prop(C, naam, _))), Dieren), write(Dieren).
+		findall(C, (isa(A, dier), isa(B, A), isa(C, B), not(prop(C, voortbewegen, lopen))), Dieren), write(Dieren).
+
+
+
+
+*/
+
+
+
+
+
+/************ top: dier  *****************************/
+
+
+
+/************ layer 1: klassen van dieren ************/
+isa(zoogdier, dier).
+isa(reptiel, dier).
+isa(vogelachtig, dier).
+isa(visachtig, dier).
+
+
+/*********** layer 2: subklassen van klassen *********/
+% zoogdieren
+isa(roofdier, zoogdier).
+isa(slurfdier, zoogdier).
+isa(onevenhoevige, zoogdier).
+isa(evenhoevige, zoogdier).
+isa(knaagdier, zoogdier).
+isa(primaat, zoogdier).
+isa(buideldier, zoogdier).
+
+% vogels
+isa(roofvogel, vogelachtig).
+isa(kraanvogelachtig, vogelachtig).
+isa(ooievaarachtig, vogelachtig).
+isa(hoender, vogelachtig).
+isa(watervogel, vogelachtig).
+isa(pinguinachtig, vogelachtig).
+
+% reptielen
+isa(krokodilachtig, reptiel).
+
+% vissen
+isa(haaiachtig, visachtig). % is eigenlijk geen subgroep, maar om diepte van boom te behouden deze 'hack'
+
+
+/*********** layer 3: dieren *************************/
+
+%% STRUCTUURBOOM
+
+isa(leeuw, roofdier).
+isa(wasbeer, roofdier).
+isa(wolf, roofdier).
+isa(olifant, slurfdier).
+isa(zebra, onevenhoevige).
+isa(tapir, onevenhoevige).
+isa(nijlpaard, evenhoevige).
+isa(kameel, evenhoevige).
+isa(lama, evenhoevige).
+isa(giraffe, evenhoevige).
+isa(springbok, evenhoevige).
+isa(bok, evenhoevige).
+isa(bever, knaagdier).
+isa(gibbon, primaat).
+isa(gorilla, primaat).
+isa(chimpansee, primaat).
+isa(bredeweg, primaat).
+isa(valk, roofvogel).
+isa(kraanvogel, kraanvogelachtig).
+isa(flamingo, ooievaarachtig).
+isa(ibis, ooievaarachtig).
+isa(kangoeroe, buideldier).
+isa(antilope, evenhoevige).
+isa(pinguin, pinguinachtig).
+isa(bizon, evenhoevige).
+isa(hyena, roofdier).
+isa(tijger, roofdier).
+isa(baviaan, primaat).
+isa(fazant, hoender).
+isa(eend, watervogel).
+isa(pelikaan, watervogel).
+isa(krokodil, krokodilachtig).
+isa(haai, haaiachtig).
+
+
+
+%% EIGENSCHAPPEN
+
+ prop(leeuw, naam, 'Leeuw').
+ prop(leeuw, latijn, 'Panthera leo').
+ prop(leeuw, verblijf, 26).
+ prop(leeuw, kleur, lichtbruin).
+ prop(leeuw, gewicht, 160).
+ prop(leeuw, grootte, 210).
+ prop(leeuw, eten, carnivoor).
+ prop(leeuw, voortbewegen, lopen).
+ prop(leeuw, voortbewegen, rennen).
+ prop(leeuw, knuffelheidsfactor, gevaarlijk).
+
+
+ prop(wasbeer, naam, 'Wasbeer').
+ prop(wasbeer, latijn, 'Procyon lotor').
+ prop(wasbeer, verblijf, 15).
+ prop(wasbeer, kleur, lichtbruin).
+ prop(wasbeer, gewicht, 12).
+ prop(wasbeer, grootte, 80).
+ prop(wasbeer, eten, carnivoor).
+ prop(wasbeer, voortbewegen, lopen).
+ prop(wasbeer, voortbewegen, klimmen).
+ prop(wasbeer, knuffelheidsfactor, knuffelbaar).
+
+
+
+ prop(wolf, naam, 'Alaska-wolf').
+ prop(wolf, latijn, 'Canis lupus arctos').
+ prop(wolf, verblijf, 11).
+ prop(wolf, kleur, wit).
+ prop(wolf, gewicht, 50).
+ prop(wolf, grootte, 120).
+ prop(wolf, eten, carnivoor).
+ prop(wolf, voortbewegen, lopen).
+ prop(wolf, voortbewegen, rennen).
+ prop(wolf, knuffelheidsfactor, gevaarlijk).
+
+
+
+ prop(olifant, naam, 'Indische olifant').
+ prop(olifant, latijn, 'Canis lupus arctos').
+ prop(olifant, verblijf, 23).
+ prop(olifant, kleur, grijs).
+ prop(olifant, gewicht, 5000).
+ prop(olifant, grootte, 500).
+ prop(olifant, eten, herbivoor).
+ prop(olifant, voortbewegen, lopen).
+ prop(olifant, knuffelheidsfactor, neutraal).
+
+
+
+ prop(zebra, naam, 'Grevyzebra').
+ prop(zebra, latijn, 'Equus grevyi').
+ prop(zebra, verblijf, 3).
+ prop(zebra, kleur, zwart).
+ prop(zebra, kleur, wit).
+ prop(zebra, gewicht, 400).
+ prop(zebra, grootte, 275).
+ prop(zebra, eten, herbivoor).
+ prop(zebra, voortbewegen, lopen).
+ prop(zebra, voortbewegen, rennen).
+ prop(zebra, knuffelheidsfactor, neutraal).
+
+
+
+ prop(tapir, naam, 'Indische tapir').
+ prop(tapir, latijn, 'Tapirus indicus').
+ prop(tapir, verblijf, 17).
+ prop(tapir, kleur, zwart).
+ prop(tapir, gewicht, 280).
+ prop(tapir, grootte, 200).
+ prop(tapir, eten, herbivoor).
+ prop(tapir, voortbewegen, lopen).
+ prop(tapir, knuffelheidsfactor, neutraal).
+
+
+
+ prop(nijlpaard, naam, 'Nijlpaard').
+ prop(nijlpaard, latijn, 'Hippopotamus amphibius').
+ prop(nijlpaard, verblijf, 18).
+ prop(nijlpaard, kleur, grijs).
+ prop(nijlpaard, gewicht, 2000).
+ prop(nijlpaard, grootte, 310).
+ prop(nijlpaard, eten, omnivoor).
+ prop(nijlpaard, voortbewegen, lopen).
+ prop(nijlpaard, voortbewegen, zwemmen).
+ prop(nijlpaard, knuffelheidsfactor, gevaarlijk).
+
+
+
+ prop(kameel, naam, 'Huiskameel').
+ prop(kameel, latijn, 'Camelus ferus').
+ prop(kameel, verblijf, 30).
+ prop(kameel, kleur, bruin).
+ prop(kameel, gewicht, 600).
+ prop(kameel, grootte, 200).
+ prop(kameel, eten, herbivoor).
+ prop(kameel, voortbewegen, lopen).
+ prop(kameel, knuffelheidsfactor, neutraal).
+
+
+
+ prop(lama, naam, 'Lama').
+ prop(lama, latijn, 'Lama glama').
+ prop(lama, verblijf, 14).
+ prop(lama, kleur, bruin).
+ prop(lama, gewicht, 140).
+ prop(lama, grootte, 170).
+ prop(lama, eten, herbivoor).
+ prop(lama, voortbewegen, lopen).
+ prop(lama, voortbewegen, rennen).
+ prop(lama, knuffelheidsfactor, neutraal).
+
+
+
+ prop(giraffe, naam, 'Netgiraffe').
+ prop(giraffe, latijn, 'Giraffa camelopardalis reticulata').
+ prop(giraffe, verblijf, 22).
+ prop(giraffe, kleur, bruin).
+ prop(giraffe, kleur, lichtbruin).
+ prop(giraffe, kleur, wit).
+ prop(giraffe, gewicht, 1700).
+ prop(giraffe, grootte, 500).
+ prop(giraffe, eten, herbivoor).
+ prop(giraffe, voortbewegen, lopen).
+ prop(giraffe, knuffelheidsfactor, neutraal).
+
+
+
+ prop(springbok, naam, 'Springbok').
+ prop(springbok, latijn, 'Antidorcas marsupialis').
+ prop(springbok, verblijf, 21).
+ prop(springbok, kleur, bruin).
+ prop(springbok, kleur, wit).
+ prop(springbok, gewicht, 40).
+ prop(springbok, grootte, 75).
+ prop(springbok, eten, herbivoor).
+ prop(springbok, voortbewegen, lopen).
+ prop(springbok, voortbewegen, rennen).
+ prop(springbok, knuffelheidsfactor, gevaarlijk).
+
+
+
+ prop(bok, naam, 'Alpensteenbok').
+ prop(bok, latijn, 'Capra ibex ibex').
+ prop(bok, verblijf, 5).
+ prop(bok, kleur, bruin).
+ prop(bok, gewicht, 95).
+ prop(bok, grootte, 140).
+ prop(bok, eten, herbivoor).
+ prop(bok, voortbewegen, lopen).
+ prop(bok, voortbewegen, rennen).
+ prop(bok, knuffelheidsfactor, gevaarlijk).
+
+
+
+ prop(bever, naam, 'Canadese bever').
+ prop(bever, latijn, 'Castor canadensis').
+ prop(bever, verblijf, 6).
+ prop(bever, kleur, bruin).
+ prop(bever, gewicht, 23).
+ prop(bever, grootte, 70).
+ prop(bever, eten, omnivoor).
+ prop(bever, voortbewegen, zwemmen).
+ prop(bever, voortbewegen, lopen).
+ prop(bever, knuffelheidsfactor, knuffelbaar).
+
+
+
+ prop(gibbon, naam, 'Witwanggibbon').
+ prop(gibbon, latijn, 'Hylobates leucogenys').
+ prop(gibbon, verblijf, 4).
+ prop(gibbon, kleur, lichtbruin).
+ prop(gibbon, kleur, zwart).
+ prop(gibbon, gewicht, 35).
+ prop(gibbon, grootte, 120).
+ prop(gibbon, eten, omnivoor).
+ prop(gibbon, voortbewegen, lopen).
+ prop(gibbon, voortbewegen, klimmen).
+ prop(gibbon, knuffelheidsfactor, knuffelbaar).
+
+
+
+ prop(gorilla, naam, 'Westelijke laaglandgorilla').
+ prop(gorilla, latijn, 'gorilla gorilla gorilla').
+ prop(gorilla, verblijf, 16).
+ prop(gorilla, kleur, zwart).
+ prop(gorilla, gewicht, 80).
+ prop(gorilla, grootte, 155).
+ prop(gorilla, eten, omnivoor).
+ prop(gorilla, voortbewegen, lopen).
+ prop(gorilla, voortbewegen, klimmen).
+ prop(gorilla, knuffelheidsfactor, neutraal).
+
+
+
+ prop(chimpansee, naam, 'Chimpansee').
+ prop(chimpansee, latijn, 'Pan troglodytes').
+ prop(chimpansee, verblijf, 12).
+ prop(chimpansee, kleur, donkerbruin).
+ prop(chimpansee, gewicht, 50).
+ prop(chimpansee, grootte, 150).
+ prop(chimpansee, eten, omnivoor).
+ prop(chimpansee, voortbewegen, lopen).
+ prop(chimpansee, voortbewegen, klimmen).
+ prop(chimpansee, knuffelheidsfactor, neutraal).
+
+
+
+ prop(bredeweg, naam, 'Japanse slingerbredeweg').
+ prop(bredeweg, latijn, 'Optas cmaptos').
+ prop(bredeweg, verblijf, 12).
+ prop(bredeweg, kleur, blank).
+ prop(bredeweg, gewicht, 85).
+ prop(bredeweg, grootte, 180).
+ prop(bredeweg, eten, omnivoor).
+ prop(bredeweg, voortbewegen, lopen).
+ prop(bredeweg, voortbewegen, zwemmen).
+ prop(bredeweg, knuffelheidsfactor, gevaarlijk).
+
+
+
+ prop(valk, naam, 'Torenvalk').
+ prop(valk, latijn, 'Falco tinnunculus').
+ prop(valk, verblijf, 1).
+ prop(valk, kleur, rood).
+ prop(valk, kleur, bruin).
+ prop(valk, kleur, grijs).
+ prop(valk, gewicht, 0.5).
+ prop(valk, grootte, 30).
+ prop(valk, eten, carnivoor).
+ prop(valk, voortbewegen, vliegen).
+ prop(valk, knuffelheidsfactor, neutraal).
+
+
+
+ prop(kraanvogel, naam, 'Paradijskraanvogel').
+ prop(kraanvogel, latijn, 'Anthropoides paradiseus').
+ prop(kraanvogel, verblijf, 19).
+ prop(kraanvogel, kleur, grijs).
+ prop(kraanvogel, gewicht, 5).
+ prop(kraanvogel, grootte, 110).
+ prop(kraanvogel, eten, herbivoor).
+ prop(kraanvogel, voortbewegen, vliegen).
+ prop(kraanvogel, knuffelheidsfactor, neutraal).
+
+
+
+ prop(flamingo, naam, 'Chileense flamingo').
+ prop(flamingo, latijn, 'Phoenicopterus chilensis').
+ prop(flamingo, verblijf, 2).
+ prop(flamingo, kleur, roze).
+ prop(flamingo, gewicht, 15).
+ prop(flamingo, grootte, 120).
+ prop(flamingo, eten, carnivoor).
+ prop(flamingo, voortbewegen, lopen).
+ prop(flamingo, voortbewegen, vliegen).
+ prop(flamingo, knuffelheidsfactor, neutraal).
+
+
+
+ prop(ibis, naam, 'Rode ibis').
+ prop(ibis, latijn, 'Eudocimes ruber').
+ prop(ibis, verblijf, 10).
+ prop(ibis, kleur, rood). % ik zocht het nog op ook..
+ prop(ibis, gewicht, 0.7).
+ prop(ibis, grootte, 60).
+ prop(ibis, eten, carnivoor).
+ prop(ibis, voortbewegen, vliegen).
+ prop(ibis, knuffelheidsfactor, neutraal).
+
+
+
+ prop(kangoeroe, naam, 'Kangoeroe').
+ prop(kangoeroe, latijn, 'Macropodidae').
+ prop(kangoeroe, verblijf, 7).
+ prop(kangoeroe, kleur, bruin).
+ prop(kangoeroe, gewicht, 15).
+ prop(kangoeroe, grootte, 150).
+ prop(kangoeroe, eten, herbivoor).
+ prop(kangoeroe, voortbewegen, lopen).
+ prop(kangoeroe, voortbewegen, rennen).
+ prop(kangoeroe, knuffelheidsfactor, knuffelbaar).
+
+
+
+ prop(antilope, naam, 'Vierhoornantilope').
+ prop(antilope, latijn, 'Tetracerus quadricornis').
+ prop(antilope, verblijf, 8).
+ prop(antilope, kleur, bruin).
+ prop(antilope, gewicht, 19).
+ prop(antilope, grootte, 90).
+ prop(antilope, eten, herbivoor).
+ prop(antilope, voortbewegen, lopen).
+ prop(antilope, voortbewegen, rennen).
+ prop(antilope, knuffelheidsfactor, neutraal).
+
+
+
+ prop(pinguin, naam, 'Ezelspinguin').
+ prop(pinguin, latijn, 'Pygoscelis papua').
+ prop(pinguin, verblijf, 13).
+ prop(pinguin, kleur, zwart).
+ prop(pinguin, kleur, wit).
+ prop(pinguin, gewicht, 25).
+ prop(pinguin, grootte, 60).
+ prop(pinguin, eten, carnivoor).
+ prop(pinguin, voortbewegen, zwemmen).
+ prop(pinguin, voortbewegen, lopen).
+ prop(pinguin, knuffelheidsfactor, neutraal).
+
+
+
+ prop(bizon, naam, 'Europese bizon').
+ prop(bizon, latijn, 'Bison bonasus').
+ prop(bizon, verblijf, 20).
+ prop(bizon, kleur, bruin).
+ prop(bizon, gewicht, 800).
+ prop(bizon, grootte, 260).
+ prop(bizon, eten, herbivoor).
+ prop(bizon, voortbewegen, lopen).
+ prop(bizon, voortbewegen, rennen).
+ prop(bizon, knuffelheidsfactor, gevaarlijk).
+
+
+
+ prop(hyena, naam, 'Gevlekte hyena').
+ prop(hyena, latijn, 'Crocuta crocuta').
+ prop(hyena, verblijf, 24).
+ prop(hyena, kleur, bruin).
+ prop(hyena, kleur, lichtbruin).
+ prop(hyena, gewicht, 60).
+ prop(hyena, grootte, 140).
+ prop(hyena, eten, carnivoor).
+ prop(hyena, voortbewegen, lopen).
+ prop(hyena, voortbewegen, rennen).
+ prop(hyena, knuffelheidsfactor, gevaarlijk).
+
+
+
+ prop(tijger, naam, 'Siberische tijger').
+ prop(tijger, latijn, 'Panthera tigris altaica').
+ prop(tijger, verblijf, 25).
+ prop(tijger, kleur, oranje).
+ prop(tijger, kleur, zwart).
+ prop(tijger, kleur, wit).
+ prop(tijger, gewicht, 325).
+ prop(tijger, grootte, 205).
+ prop(tijger, eten, carnivoor).
+ prop(tijger, voortbewegen, lopen).
+ prop(tijger, voortbewegen, rennen).
+ prop(tijger, knuffelheidsfactor, gevaarlijk).
+
+
+
+ prop(baviaan, naam, 'Bruine baviaan').
+ prop(baviaan, latijn, 'Papio papio').
+ prop(baviaan, verblijf, 31).
+ prop(baviaan, kleur, bruin).
+ prop(baviaan, gewicht, 40).
+ prop(baviaan, grootte, 120).
+ prop(baviaan, eten, omnivoor).
+ prop(baviaan, voortbewegen, lopen).
+ prop(baviaan, voortbewegen, klimmen).
+ prop(baviaan, knuffelheidsfactor, knuffelbaar).
+
+
+ prop(fazant, naam, 'Edwards fazant').
+ prop(fazant, latijn, 'Lophura edwardsi').
+ prop(fazant, verblijf, 9).
+ prop(fazant, kleur, bruin).
+ prop(fazant, kleur, rood).
+ prop(fazant, gewicht, 2).
+ prop(fazant, grootte, 63).
+ prop(fazant, eten, omnivoor).
+ prop(fazant, voortbewegen, vliegen).
+ prop(fazant, knuffelheidsfactor, neutraal).
+
+
+ prop(eend, naam, 'Muskuseend').
+ prop(eend, latijn, 'Cairina moschata').
+ prop(eend, verblijf, 27).
+ prop(eend, kleur, zwart).
+ prop(eend, kleur, wit).
+ prop(eend, gewicht, 4).
+ prop(eend, grootte, 85).
+ prop(eend, eten, omnivoor).
+ prop(eend, voortbewegen, vliegen).
+ prop(eend, knuffelheidsfactor, neutraal).
+
+
+/*
+
+
+% TODO: Fazant, eend, pelikaan, krokodil, haai
+
+ prop(pelikaan, naam, '').
+ prop(, latijn, '').
+ prop(, verblijf, ).
+ prop(, kleur, ).
+ prop(, gewicht, ).
+ prop(, grootte, ).
+ prop(, eten, ).
+ prop(, voortbewegen, ).
+ prop(, voortbewegen, ).
+ prop(, knuffelheidsfactor, ).
+
+ prop(krokodil, naam, '').
+ prop(, latijn, '').
+ prop(, verblijf, ).
+ prop(, kleur, ).
+ prop(, gewicht, ).
+ prop(, grootte, ).
+ prop(, eten, ).
+ prop(, voortbewegen, ).
+ prop(, voortbewegen, ).
+ prop(, knuffelheidsfactor, ).
+
+
+ prop(haai, naam, '').
+ prop(, latijn, '').
+ prop(, verblijf, ).
+ prop(, kleur, ).
+ prop(, gewicht, ).
+ prop(, grootte, ).
+ prop(, eten, ).
+ prop(, voortbewegen, ).
+ prop(, voortbewegen, ).
+ prop(, knuffelheidsfactor, ).
+
+
+*/
+
+
+
+
+ % here more animals..
+
+
+
+
+
+%% INDIVIDUELE DIEREN (??)
+
+
+
+
+
+
+
+
+
+
+
+/************ shortcuts  *****************************/
+
+
+% snelle naam voor knuffelheidsfactor
+% merk op: opvragen van alle eigenschappen
+% geeft hierdoor twee keer de knuffact.
+prop(A, knuffact, B) :-
+ prop(A, knuffelheidsfactor, B).
+
+% grootte_orde: zet grootte (cm) om in orde van grootte
+% note: geeft dieren in volgorde van grootte
+prop(A, grootte_orde, tiny) :- prop(A, grootte, B), B < 30.
+prop(A, grootte_orde, klein) :- prop(A, grootte, B), B >= 30, B < 75.
+prop(A, grootte_orde, medium) :- prop(A, grootte, B), B >= 75, B < 200.
+prop(A, grootte_orde, groot) :- prop(A, grootte, B), B >= 200, B < 300.
+prop(A, grootte_orde, huge) :- prop(A, grootte, B), B > 300.
+
+% gewicht_orde: net zoiets? nodig?
+
+
+
+﻿% Artis project - specific artis animals
+% Author: Martijn van der Veen
+% Automatically generated animal file for artis.
+% Please do not edit but generate with make_artis_animals.py!
+
+
+
+/****** wasbeer ******/
+isa(early, wasbeer).
+ prop(early, specific, artis).
+ prop(early, geslacht, vrouw).
+ prop(early, geboorte, 27/2/1992).
+ prop(early, geboorteplaats,artis).
+ prop(early, aantal_jongen, 4).
+ prop(early, ziekte, volgt_nog).
+ prop(early, mood, volgt_nog).
+ prop(early, humeur, volgt_nog).
+
+isa(shumba, wasbeer).
+ prop(shumba, specific, artis).
+ prop(shumba, geslacht, man).
+ prop(shumba, geboorte, 14/6/1995).
+ prop(shumba, geboorteplaats,artis).
+ prop(shumba, aantal_jongen, 5).
+ prop(shumba, ziekte, volgt_nog).
+ prop(shumba, mood, volgt_nog).
+ prop(shumba, humeur, volgt_nog).
+
+isa(qinty, wasbeer).
+ prop(qinty, specific, artis).
+ prop(qinty, geslacht, vrouw).
+ prop(qinty, geboorte, 17/1/1993).
+ prop(qinty, geboorteplaats,artis).
+ prop(qinty, aantal_jongen, 3).
+ prop(qinty, ziekte, volgt_nog).
+ prop(qinty, mood, volgt_nog).
+ prop(qinty, humeur, volgt_nog).
+
+isa(quilana, wasbeer).
+ prop(quilana, specific, artis).
+ prop(quilana, geslacht, man).
+ prop(quilana, geboorte, 30/2/2000).
+ prop(quilana, geboorteplaats,artis).
+ prop(quilana, aantal_jongen, 0).
+ prop(quilana, ziekte, volgt_nog).
+ prop(quilana, mood, volgt_nog).
+ prop(quilana, humeur, volgt_nog).
+
+isa(ilissa, wasbeer).
+ prop(ilissa, specific, artis).
+ prop(ilissa, geslacht, vrouw).
+ prop(ilissa, geboorte, 8/6/1993).
+ prop(ilissa, geboorteplaats,artis).
+ prop(ilissa, aantal_jongen, 4).
+ prop(ilissa, ziekte, volgt_nog).
+ prop(ilissa, mood, volgt_nog).
+ prop(ilissa, humeur, volgt_nog).
+
+
+
+/****** wolf ******/
+isa(rolo, wolf).
+ prop(rolo, specific, artis).
+ prop(rolo, geslacht, man).
+ prop(rolo, geboorte, 1/10/1992).
+ prop(rolo, geboorteplaats,artis).
+ prop(rolo, aantal_jongen, 7).
+ prop(rolo, allergie, gras).
+ prop(rolo, ziekte, volgt_nog).
+ prop(rolo, mood, volgt_nog).
+ prop(rolo, humeur, volgt_nog).
+
+isa(kosie, wolf).
+ prop(kosie, specific, artis).
+ prop(kosie, geslacht, man).
+ prop(kosie, geboorte, 18/8/2000).
+ prop(kosie, geboorteplaats,artis).
+ prop(kosie, aantal_jongen, 5).
+ prop(kosie, ziekte, volgt_nog).
+ prop(kosie, mood, volgt_nog).
+ prop(kosie, humeur, volgt_nog).
+
+isa(devil, wolf).
+ prop(devil, specific, artis).
+ prop(devil, geslacht, man).
+ prop(devil, geboorte, 3/6/1998).
+ prop(devil, geboorteplaats,artis).
+ prop(devil, aantal_jongen, 1).
+ prop(devil, allergie, vlees).
+ prop(devil, ziekte, volgt_nog).
+ prop(devil, mood, volgt_nog).
+ prop(devil, humeur, volgt_nog).
+
+isa(nino, wolf).
+ prop(nino, specific, artis).
+ prop(nino, geslacht, man).
+ prop(nino, geboorte, 1/9/1993).
+ prop(nino, geboorteplaats,artis).
+ prop(nino, aantal_jongen, 2).
+ prop(nino, ziekte, volgt_nog).
+ prop(nino, mood, volgt_nog).
+ prop(nino, humeur, volgt_nog).
+
+isa(titi, wolf).
+ prop(titi, specific, artis).
+ prop(titi, geslacht, vrouw).
+ prop(titi, geboorte, 29/4/2006).
+ prop(titi, geboorteplaats,artis).
+ prop(titi, aantal_jongen, 8).
+ prop(titi, ziekte, volgt_nog).
+ prop(titi, mood, volgt_nog).
+ prop(titi, humeur, volgt_nog).
+
+isa(oriana, wolf).
+ prop(oriana, specific, artis).
+ prop(oriana, geslacht, vrouw).
+ prop(oriana, geboorte, 15/4/2005).
+ prop(oriana, geboorteplaats,artis).
+ prop(oriana, aantal_jongen, 5).
+ prop(oriana, ziekte, volgt_nog).
+ prop(oriana, mood, volgt_nog).
+ prop(oriana, humeur, volgt_nog).
+
+isa(zoran, wolf).
+ prop(zoran, specific, artis).
+ prop(zoran, geslacht, man).
+ prop(zoran, geboorte, 20/5/1991).
+ prop(zoran, geboorteplaats,artis).
+ prop(zoran, aantal_jongen, 5).
+ prop(zoran, ziekte, volgt_nog).
+ prop(zoran, mood, volgt_nog).
+ prop(zoran, humeur, volgt_nog).
+
+isa(fluffy, wolf).
+ prop(fluffy, specific, artis).
+ prop(fluffy, geslacht, man).
+ prop(fluffy, geboorte, 13/1/1992).
+ prop(fluffy, geboorteplaats,artis).
+ prop(fluffy, aantal_jongen, 3).
+ prop(fluffy, ziekte, volgt_nog).
+ prop(fluffy, mood, volgt_nog).
+ prop(fluffy, humeur, volgt_nog).
+
+isa(willow, wolf).
+ prop(willow, specific, artis).
+ prop(willow, geslacht, man).
+ prop(willow, geboorte, 5/1/2007).
+ prop(willow, geboorteplaats,artis).
+ prop(willow, aantal_jongen, 7).
+ prop(willow, ziekte, volgt_nog).
+ prop(willow, mood, volgt_nog).
+ prop(willow, humeur, volgt_nog).
+
+isa(robin, wolf).
+ prop(robin, specific, artis).
+ prop(robin, geslacht, man).
+ prop(robin, geboorte, 4/2/1990).
+ prop(robin, geboorteplaats,wild).
+ prop(robin, aantal_jongen, 4).
+ prop(robin, ziekte, volgt_nog).
+ prop(robin, mood, volgt_nog).
+ prop(robin, humeur, volgt_nog).
+
+
+
+/****** olifant ******/
+isa(snuf, olifant).
+ prop(snuf, specific, artis).
+ prop(snuf, geslacht, man).
+ prop(snuf, geboorte, 20/3/1999).
+ prop(snuf, geboorteplaats,artis).
+ prop(snuf, aantal_jongen, 8).
+ prop(snuf, ziekte, volgt_nog).
+ prop(snuf, mood, volgt_nog).
+ prop(snuf, humeur, volgt_nog).
+
+isa(mopsie, olifant).
+ prop(mopsie, specific, artis).
+ prop(mopsie, geslacht, man).
+ prop(mopsie, geboorte, 28/3/2002).
+ prop(mopsie, geboorteplaats,artis).
+ prop(mopsie, aantal_jongen, 4).
+ prop(mopsie, ziekte, volgt_nog).
+ prop(mopsie, mood, volgt_nog).
+ prop(mopsie, humeur, volgt_nog).
+
+isa(twister, olifant).
+ prop(twister, specific, artis).
+ prop(twister, geslacht, vrouw).
+ prop(twister, geboorte, 30/3/1989).
+ prop(twister, geboorteplaats,artis).
+ prop(twister, aantal_jongen, 1).
+ prop(twister, ziekte, volgt_nog).
+ prop(twister, mood, volgt_nog).
+ prop(twister, humeur, volgt_nog).
+
+isa(bambam, olifant).
+ prop(bambam, specific, artis).
+ prop(bambam, geslacht, man).
+ prop(bambam, geboorte, 21/2/1996).
+ prop(bambam, geboorteplaats,wild).
+ prop(bambam, aantal_jongen, 4).
+ prop(bambam, ziekte, volgt_nog).
+ prop(bambam, mood, volgt_nog).
+ prop(bambam, humeur, volgt_nog).
+
+isa(spike, olifant).
+ prop(spike, specific, artis).
+ prop(spike, geslacht, vrouw).
+ prop(spike, geboorte, 22/7/2007).
+ prop(spike, geboorteplaats,artis).
+ prop(spike, aantal_jongen, 2).
+ prop(spike, allergie, gras).
+ prop(spike, ziekte, volgt_nog).
+ prop(spike, mood, volgt_nog).
+ prop(spike, humeur, volgt_nog).
+
+isa(frutsel, olifant).
+ prop(frutsel, specific, artis).
+ prop(frutsel, geslacht, vrouw).
+ prop(frutsel, geboorte, 15/7/1989).
+ prop(frutsel, geboorteplaats,artis).
+ prop(frutsel, aantal_jongen, 4).
+ prop(frutsel, ziekte, volgt_nog).
+ prop(frutsel, mood, volgt_nog).
+ prop(frutsel, humeur, volgt_nog).
+
+isa(wiebel, olifant).
+ prop(wiebel, specific, artis).
+ prop(wiebel, geslacht, vrouw).
+ prop(wiebel, geboorte, 12/1/1994).
+ prop(wiebel, geboorteplaats,artis).
+ prop(wiebel, aantal_jongen, 5).
+ prop(wiebel, ziekte, volgt_nog).
+ prop(wiebel, mood, volgt_nog).
+ prop(wiebel, humeur, volgt_nog).
+
+isa(sherry, olifant).
+ prop(sherry, specific, artis).
+ prop(sherry, geslacht, vrouw).
+ prop(sherry, geboorte, 21/5/1992).
+ prop(sherry, geboorteplaats,artis).
+ prop(sherry, aantal_jongen, 7).
+ prop(sherry, allergie, borstel).
+ prop(sherry, ziekte, volgt_nog).
+ prop(sherry, mood, volgt_nog).
+ prop(sherry, humeur, volgt_nog).
+
+isa(xandy, olifant).
+ prop(xandy, specific, artis).
+ prop(xandy, geslacht, vrouw).
+ prop(xandy, geboorte, 27/7/2007).
+ prop(xandy, geboorteplaats,artis).
+ prop(xandy, aantal_jongen, 0).
+ prop(xandy, ziekte, volgt_nog).
+ prop(xandy, mood, volgt_nog).
+ prop(xandy, humeur, volgt_nog).
+
+
+
+/****** zebra ******/
+isa(kaas, zebra).
+ prop(kaas, specific, artis).
+ prop(kaas, geslacht, man).
+ prop(kaas, geboorte, 26/4/2005).
+ prop(kaas, geboorteplaats,artis).
+ prop(kaas, aantal_jongen, 3).
+ prop(kaas, ziekte, volgt_nog).
+ prop(kaas, mood, volgt_nog).
+ prop(kaas, humeur, volgt_nog).
+
+isa(joke, zebra).
+ prop(joke, specific, artis).
+ prop(joke, geslacht, vrouw).
+ prop(joke, geboorte, 22/1/1998).
+ prop(joke, geboorteplaats,artis).
+ prop(joke, aantal_jongen, 0).
+ prop(joke, ziekte, volgt_nog).
+ prop(joke, mood, volgt_nog).
+ prop(joke, humeur, volgt_nog).
+
+isa(marie, zebra).
+ prop(marie, specific, artis).
+ prop(marie, geslacht, vrouw).
+ prop(marie, geboorte, 4/10/2001).
+ prop(marie, geboorteplaats,artis).
+ prop(marie, aantal_jongen, 5).
+ prop(marie, ziekte, volgt_nog).
+ prop(marie, mood, volgt_nog).
+ prop(marie, humeur, volgt_nog).
+
+isa(stripe, zebra).
+ prop(stripe, specific, artis).
+ prop(stripe, geslacht, vrouw).
+ prop(stripe, geboorte, 22/4/2008).
+ prop(stripe, geboorteplaats,artis).
+ prop(stripe, aantal_jongen, 1).
+ prop(stripe, ziekte, volgt_nog).
+ prop(stripe, mood, volgt_nog).
+ prop(stripe, humeur, volgt_nog).
+
+isa(laska, zebra).
+ prop(laska, specific, artis).
+ prop(laska, geslacht, vrouw).
+ prop(laska, geboorte, 8/2/1992).
+ prop(laska, geboorteplaats,wild).
+ prop(laska, aantal_jongen, 7).
+ prop(laska, ziekte, volgt_nog).
+ prop(laska, mood, volgt_nog).
+ prop(laska, humeur, volgt_nog).
+
+isa(liddle, zebra).
+ prop(liddle, specific, artis).
+ prop(liddle, geslacht, vrouw).
+ prop(liddle, geboorte, 9/11/1990).
+ prop(liddle, geboorteplaats,artis).
+ prop(liddle, aantal_jongen, 4).
+ prop(liddle, ziekte, volgt_nog).
+ prop(liddle, mood, volgt_nog).
+ prop(liddle, humeur, volgt_nog).
+
+isa(jada, zebra).
+ prop(jada, specific, artis).
+ prop(jada, geslacht, vrouw).
+ prop(jada, geboorte, 18/8/2003).
+ prop(jada, geboorteplaats,wild).
+ prop(jada, aantal_jongen, 7).
+ prop(jada, ziekte, volgt_nog).
+ prop(jada, mood, volgt_nog).
+ prop(jada, humeur, volgt_nog).
+
+isa(odele, zebra).
+ prop(odele, specific, artis).
+ prop(odele, geslacht, vrouw).
+ prop(odele, geboorte, 15/12/1994).
+ prop(odele, geboorteplaats,artis).
+ prop(odele, aantal_jongen, 8).
+ prop(odele, ziekte, volgt_nog).
+ prop(odele, mood, volgt_nog).
+ prop(odele, humeur, volgt_nog).
+
+isa(borus, zebra).
+ prop(borus, specific, artis).
+ prop(borus, geslacht, vrouw).
+ prop(borus, geboorte, 19/12/1999).
+ prop(borus, geboorteplaats,wild).
+ prop(borus, aantal_jongen, 7).
+ prop(borus, ziekte, volgt_nog).
+ prop(borus, mood, volgt_nog).
+ prop(borus, humeur, volgt_nog).
+
+isa(kiko, zebra).
+ prop(kiko, specific, artis).
+ prop(kiko, geslacht, vrouw).
+ prop(kiko, geboorte, 18/10/2006).
+ prop(kiko, geboorteplaats,wild).
+ prop(kiko, aantal_jongen, 8).
+ prop(kiko, allergie, gras).
+ prop(kiko, ziekte, volgt_nog).
+ prop(kiko, mood, volgt_nog).
+ prop(kiko, humeur, volgt_nog).
+
+isa(ashley, zebra).
+ prop(ashley, specific, artis).
+ prop(ashley, geslacht, vrouw).
+ prop(ashley, geboorte, 4/5/2002).
+ prop(ashley, geboorteplaats,wild).
+ prop(ashley, aantal_jongen, 6).
+ prop(ashley, allergie, gras).
+ prop(ashley, ziekte, volgt_nog).
+ prop(ashley, mood, volgt_nog).
+ prop(ashley, humeur, volgt_nog).
+
+
+
+/****** tapir ******/
+isa(white, tapir).
+ prop(white, specific, artis).
+ prop(white, geslacht, vrouw).
+ prop(white, geboorte, 7/3/2004).
+ prop(white, geboorteplaats,wild).
+ prop(white, aantal_jongen, 0).
+ prop(white, ziekte, volgt_nog).
+ prop(white, mood, volgt_nog).
+ prop(white, humeur, volgt_nog).
+
+isa(katy, tapir).
+ prop(katy, specific, artis).
+ prop(katy, geslacht, vrouw).
+ prop(katy, geboorte, 21/5/2004).
+ prop(katy, geboorteplaats,wild).
+ prop(katy, aantal_jongen, 0).
+ prop(katy, ziekte, volgt_nog).
+ prop(katy, mood, volgt_nog).
+ prop(katy, humeur, volgt_nog).
+
+isa(flappy, tapir).
+ prop(flappy, specific, artis).
+ prop(flappy, geslacht, vrouw).
+ prop(flappy, geboorte, 15/10/1995).
+ prop(flappy, geboorteplaats,artis).
+ prop(flappy, aantal_jongen, 0).
+ prop(flappy, ziekte, volgt_nog).
+ prop(flappy, mood, volgt_nog).
+ prop(flappy, humeur, volgt_nog).
+
+
+
+/****** nijlpaard ******/
+isa(bengel, nijlpaard).
+ prop(bengel, specific, artis).
+ prop(bengel, geslacht, vrouw).
+ prop(bengel, geboorte, 22/12/1991).
+ prop(bengel, geboorteplaats,artis).
+ prop(bengel, aantal_jongen, 1).
+ prop(bengel, ziekte, volgt_nog).
+ prop(bengel, mood, volgt_nog).
+ prop(bengel, humeur, volgt_nog).
+
+isa(gigi, nijlpaard).
+ prop(gigi, specific, artis).
+ prop(gigi, geslacht, vrouw).
+ prop(gigi, geboorte, 18/5/1989).
+ prop(gigi, geboorteplaats,artis).
+ prop(gigi, aantal_jongen, 2).
+ prop(gigi, ziekte, volgt_nog).
+ prop(gigi, mood, volgt_nog).
+ prop(gigi, humeur, volgt_nog).
+
+
+
+/****** kameel ******/
+isa(gummi, kameel).
+ prop(gummi, specific, artis).
+ prop(gummi, geslacht, man).
+ prop(gummi, geboorte, 15/10/2001).
+ prop(gummi, geboorteplaats,artis).
+ prop(gummi, aantal_jongen, 7).
+ prop(gummi, ziekte, volgt_nog).
+ prop(gummi, mood, volgt_nog).
+ prop(gummi, humeur, volgt_nog).
+
+
+
+/****** lama ******/
+isa(skipper, lama).
+ prop(skipper, specific, artis).
+ prop(skipper, geslacht, man).
+ prop(skipper, geboorte, 17/12/1999).
+ prop(skipper, geboorteplaats,wild).
+ prop(skipper, aantal_jongen, 1).
+ prop(skipper, ziekte, volgt_nog).
+ prop(skipper, mood, volgt_nog).
+ prop(skipper, humeur, volgt_nog).
+
+isa(nicky, lama).
+ prop(nicky, specific, artis).
+ prop(nicky, geslacht, vrouw).
+ prop(nicky, geboorte, 12/3/1990).
+ prop(nicky, geboorteplaats,artis).
+ prop(nicky, aantal_jongen, 4).
+ prop(nicky, ziekte, volgt_nog).
+ prop(nicky, mood, volgt_nog).
+ prop(nicky, humeur, volgt_nog).
+
+isa(toedel, lama).
+ prop(toedel, specific, artis).
+ prop(toedel, geslacht, man).
+ prop(toedel, geboorte, 22/1/1995).
+ prop(toedel, geboorteplaats,artis).
+ prop(toedel, aantal_jongen, 7).
+ prop(toedel, ziekte, volgt_nog).
+ prop(toedel, mood, volgt_nog).
+ prop(toedel, humeur, volgt_nog).
+
+isa(bino, lama).
+ prop(bino, specific, artis).
+ prop(bino, geslacht, vrouw).
+ prop(bino, geboorte, 30/11/1993).
+ prop(bino, geboorteplaats,artis).
+ prop(bino, aantal_jongen, 6).
+ prop(bino, ziekte, volgt_nog).
+ prop(bino, mood, volgt_nog).
+ prop(bino, humeur, volgt_nog).
+
+isa(cupido, lama).
+ prop(cupido, specific, artis).
+ prop(cupido, geslacht, man).
+ prop(cupido, geboorte, 4/3/1989).
+ prop(cupido, geboorteplaats,artis).
+ prop(cupido, aantal_jongen, 1).
+ prop(cupido, allergie, vlees).
+ prop(cupido, ziekte, volgt_nog).
+ prop(cupido, mood, volgt_nog).
+ prop(cupido, humeur, volgt_nog).
+
+isa(emiel, lama).
+ prop(emiel, specific, artis).
+ prop(emiel, geslacht, man).
+ prop(emiel, geboorte, 29/2/2002).
+ prop(emiel, geboorteplaats,artis).
+ prop(emiel, aantal_jongen, 5).
+ prop(emiel, allergie, gras).
+ prop(emiel, ziekte, volgt_nog).
+ prop(emiel, mood, volgt_nog).
+ prop(emiel, humeur, volgt_nog).
+
+isa(jaimie, lama).
+ prop(jaimie, specific, artis).
+ prop(jaimie, geslacht, man).
+ prop(jaimie, geboorte, 18/1/2005).
+ prop(jaimie, geboorteplaats,artis).
+ prop(jaimie, aantal_jongen, 0).
+ prop(jaimie, ziekte, volgt_nog).
+ prop(jaimie, mood, volgt_nog).
+ prop(jaimie, humeur, volgt_nog).
+
+
+
+/****** giraffe ******/
+isa(godzilla, giraffe).
+ prop(godzilla, specific, artis).
+ prop(godzilla, geslacht, vrouw).
+ prop(godzilla, geboorte, 24/1/1996).
+ prop(godzilla, geboorteplaats,wild).
+ prop(godzilla, aantal_jongen, 5).
+ prop(godzilla, ziekte, volgt_nog).
+ prop(godzilla, mood, volgt_nog).
+ prop(godzilla, humeur, volgt_nog).
+
+isa(alfke, giraffe).
+ prop(alfke, specific, artis).
+ prop(alfke, geslacht, man).
+ prop(alfke, geboorte, 3/3/1996).
+ prop(alfke, geboorteplaats,wild).
+ prop(alfke, aantal_jongen, 4).
+ prop(alfke, ziekte, volgt_nog).
+ prop(alfke, mood, volgt_nog).
+ prop(alfke, humeur, volgt_nog).
+
+isa(zwartje, giraffe).
+ prop(zwartje, specific, artis).
+ prop(zwartje, geslacht, vrouw).
+ prop(zwartje, geboorte, 29/3/2000).
+ prop(zwartje, geboorteplaats,artis).
+ prop(zwartje, aantal_jongen, 0).
+ prop(zwartje, ziekte, volgt_nog).
+ prop(zwartje, mood, volgt_nog).
+ prop(zwartje, humeur, volgt_nog).
+
+
+
+/****** springbok ******/
+isa(idalia, springbok).
+ prop(idalia, specific, artis).
+ prop(idalia, geslacht, man).
+ prop(idalia, geboorte, 7/6/1994).
+ prop(idalia, geboorteplaats,artis).
+ prop(idalia, aantal_jongen, 8).
+ prop(idalia, ziekte, volgt_nog).
+ prop(idalia, mood, volgt_nog).
+ prop(idalia, humeur, volgt_nog).
+
+isa(koekeroekus, springbok).
+ prop(koekeroekus, specific, artis).
+ prop(koekeroekus, geslacht, man).
+ prop(koekeroekus, geboorte, 2/9/1993).
+ prop(koekeroekus, geboorteplaats,artis).
+ prop(koekeroekus, aantal_jongen, 5).
+ prop(koekeroekus, ziekte, volgt_nog).
+ prop(koekeroekus, mood, volgt_nog).
+ prop(koekeroekus, humeur, volgt_nog).
+
+
+
+/****** bok ******/
+isa(norah, bok).
+ prop(norah, specific, artis).
+ prop(norah, geslacht, man).
+ prop(norah, geboorte, 24/6/2006).
+ prop(norah, geboorteplaats,artis).
+ prop(norah, aantal_jongen, 7).
+ prop(norah, ziekte, volgt_nog).
+ prop(norah, mood, volgt_nog).
+ prop(norah, humeur, volgt_nog).
+
+isa(izzy, bok).
+ prop(izzy, specific, artis).
+ prop(izzy, geslacht, vrouw).
+ prop(izzy, geboorte, 6/11/1999).
+ prop(izzy, geboorteplaats,artis).
+ prop(izzy, aantal_jongen, 0).
+ prop(izzy, ziekte, volgt_nog).
+ prop(izzy, mood, volgt_nog).
+ prop(izzy, humeur, volgt_nog).
+
+
+
+/****** bever ******/
+isa(casper, bever).
+ prop(casper, specific, artis).
+ prop(casper, geslacht, man).
+ prop(casper, geboorte, 16/9/2005).
+ prop(casper, geboorteplaats,wild).
+ prop(casper, aantal_jongen, 0).
+ prop(casper, ziekte, volgt_nog).
+ prop(casper, mood, volgt_nog).
+ prop(casper, humeur, volgt_nog).
+
+isa(dip, bever).
+ prop(dip, specific, artis).
+ prop(dip, geslacht, man).
+ prop(dip, geboorte, 24/3/2001).
+ prop(dip, geboorteplaats,artis).
+ prop(dip, aantal_jongen, 5).
+ prop(dip, ziekte, volgt_nog).
+ prop(dip, mood, volgt_nog).
+ prop(dip, humeur, volgt_nog).
+
+isa(hanneke, bever).
+ prop(hanneke, specific, artis).
+ prop(hanneke, geslacht, man).
+ prop(hanneke, geboorte, 28/5/2006).
+ prop(hanneke, geboorteplaats,wild).
+ prop(hanneke, aantal_jongen, 7).
+ prop(hanneke, ziekte, volgt_nog).
+ prop(hanneke, mood, volgt_nog).
+ prop(hanneke, humeur, volgt_nog).
+
+isa(athena, bever).
+ prop(athena, specific, artis).
+ prop(athena, geslacht, man).
+ prop(athena, geboorte, 8/8/2001).
+ prop(athena, geboorteplaats,artis).
+ prop(athena, aantal_jongen, 3).
+ prop(athena, ziekte, volgt_nog).
+ prop(athena, mood, volgt_nog).
+ prop(athena, humeur, volgt_nog).
+
+isa(wallie, bever).
+ prop(wallie, specific, artis).
+ prop(wallie, geslacht, man).
+ prop(wallie, geboorte, 8/6/2005).
+ prop(wallie, geboorteplaats,artis).
+ prop(wallie, aantal_jongen, 3).
+ prop(wallie, ziekte, volgt_nog).
+ prop(wallie, mood, volgt_nog).
+ prop(wallie, humeur, volgt_nog).
+
+isa(perla, bever).
+ prop(perla, specific, artis).
+ prop(perla, geslacht, man).
+ prop(perla, geboorte, 10/2/1989).
+ prop(perla, geboorteplaats,wild).
+ prop(perla, aantal_jongen, 8).
+ prop(perla, ziekte, volgt_nog).
+ prop(perla, mood, volgt_nog).
+ prop(perla, humeur, volgt_nog).
+
+isa(whisky, bever).
+ prop(whisky, specific, artis).
+ prop(whisky, geslacht, man).
+ prop(whisky, geboorte, 24/4/2008).
+ prop(whisky, geboorteplaats,artis).
+ prop(whisky, aantal_jongen, 5).
+ prop(whisky, ziekte, volgt_nog).
+ prop(whisky, mood, volgt_nog).
+ prop(whisky, humeur, volgt_nog).
+
+isa(rocky, bever).
+ prop(rocky, specific, artis).
+ prop(rocky, geslacht, man).
+ prop(rocky, geboorte, 25/11/1990).
+ prop(rocky, geboorteplaats,wild).
+ prop(rocky, aantal_jongen, 7).
+ prop(rocky, ziekte, volgt_nog).
+ prop(rocky, mood, volgt_nog).
+ prop(rocky, humeur, volgt_nog).
+
+isa(spookje, bever).
+ prop(spookje, specific, artis).
+ prop(spookje, geslacht, man).
+ prop(spookje, geboorte, 20/11/1989).
+ prop(spookje, geboorteplaats,artis).
+ prop(spookje, aantal_jongen, 1).
+ prop(spookje, allergie, gras).
+ prop(spookje, ziekte, volgt_nog).
+ prop(spookje, mood, volgt_nog).
+ prop(spookje, humeur, volgt_nog).
+
+isa(earl, bever).
+ prop(earl, specific, artis).
+ prop(earl, geslacht, man).
+ prop(earl, geboorte, 14/12/2004).
+ prop(earl, geboorteplaats,artis).
+ prop(earl, aantal_jongen, 4).
+ prop(earl, ziekte, volgt_nog).
+ prop(earl, mood, volgt_nog).
+ prop(earl, humeur, volgt_nog).
+
+isa(verona, bever).
+ prop(verona, specific, artis).
+ prop(verona, geslacht, vrouw).
+ prop(verona, geboorte, 3/9/2005).
+ prop(verona, geboorteplaats,artis).
+ prop(verona, aantal_jongen, 1).
+ prop(verona, ziekte, volgt_nog).
+ prop(verona, mood, volgt_nog).
+ prop(verona, humeur, volgt_nog).
+
+isa(wodan, bever).
+ prop(wodan, specific, artis).
+ prop(wodan, geslacht, man).
+ prop(wodan, geboorte, 21/9/1999).
+ prop(wodan, geboorteplaats,wild).
+ prop(wodan, aantal_jongen, 7).
+ prop(wodan, ziekte, volgt_nog).
+ prop(wodan, mood, volgt_nog).
+ prop(wodan, humeur, volgt_nog).
+
+
+
+/****** gibbon ******/
+isa(mellow, gibbon).
+ prop(mellow, specific, artis).
+ prop(mellow, geslacht, man).
+ prop(mellow, geboorte, 1/9/1996).
+ prop(mellow, geboorteplaats,artis).
+ prop(mellow, aantal_jongen, 1).
+ prop(mellow, ziekte, volgt_nog).
+ prop(mellow, mood, volgt_nog).
+ prop(mellow, humeur, volgt_nog).
+
+isa(fuzzy, gibbon).
+ prop(fuzzy, specific, artis).
+ prop(fuzzy, geslacht, vrouw).
+ prop(fuzzy, geboorte, 20/2/2008).
+ prop(fuzzy, geboorteplaats,artis).
+ prop(fuzzy, aantal_jongen, 7).
+ prop(fuzzy, ziekte, volgt_nog).
+ prop(fuzzy, mood, volgt_nog).
+ prop(fuzzy, humeur, volgt_nog).
+
+isa(doortje, gibbon).
+ prop(doortje, specific, artis).
+ prop(doortje, geslacht, man).
+ prop(doortje, geboorte, 23/1/1989).
+ prop(doortje, geboorteplaats,artis).
+ prop(doortje, aantal_jongen, 6).
+ prop(doortje, ziekte, volgt_nog).
+ prop(doortje, mood, volgt_nog).
+ prop(doortje, humeur, volgt_nog).
+
+isa(job, gibbon).
+ prop(job, specific, artis).
+ prop(job, geslacht, vrouw).
+ prop(job, geboorte, 20/7/2000).
+ prop(job, geboorteplaats,artis).
+ prop(job, aantal_jongen, 5).
+ prop(job, ziekte, volgt_nog).
+ prop(job, mood, volgt_nog).
+ prop(job, humeur, volgt_nog).
+
+isa(rogier, gibbon).
+ prop(rogier, specific, artis).
+ prop(rogier, geslacht, vrouw).
+ prop(rogier, geboorte, 22/5/1989).
+ prop(rogier, geboorteplaats,artis).
+ prop(rogier, aantal_jongen, 1).
+ prop(rogier, allergie, gras).
+ prop(rogier, ziekte, volgt_nog).
+ prop(rogier, mood, volgt_nog).
+ prop(rogier, humeur, volgt_nog).
+
+isa(herbie, gibbon).
+ prop(herbie, specific, artis).
+ prop(herbie, geslacht, vrouw).
+ prop(herbie, geboorte, 17/5/1997).
+ prop(herbie, geboorteplaats,wild).
+ prop(herbie, aantal_jongen, 7).
+ prop(herbie, ziekte, volgt_nog).
+ prop(herbie, mood, volgt_nog).
+ prop(herbie, humeur, volgt_nog).
+
+isa(sita, gibbon).
+ prop(sita, specific, artis).
+ prop(sita, geslacht, vrouw).
+ prop(sita, geboorte, 30/1/1989).
+ prop(sita, geboorteplaats,artis).
+ prop(sita, aantal_jongen, 8).
+ prop(sita, allergie, vlees).
+ prop(sita, ziekte, volgt_nog).
+ prop(sita, mood, volgt_nog).
+ prop(sita, humeur, volgt_nog).
+
+
+
+/****** gorilla ******/
+isa(cleo, gorilla).
+ prop(cleo, specific, artis).
+ prop(cleo, geslacht, vrouw).
+ prop(cleo, geboorte, 12/5/2000).
+ prop(cleo, geboorteplaats,artis).
+ prop(cleo, aantal_jongen, 2).
+ prop(cleo, ziekte, volgt_nog).
+ prop(cleo, mood, volgt_nog).
+ prop(cleo, humeur, volgt_nog).
+
+isa(ewa, gorilla).
+ prop(ewa, specific, artis).
+ prop(ewa, geslacht, vrouw).
+ prop(ewa, geboorte, 24/3/1993).
+ prop(ewa, geboorteplaats,wild).
+ prop(ewa, aantal_jongen, 0).
+ prop(ewa, ziekte, volgt_nog).
+ prop(ewa, mood, volgt_nog).
+ prop(ewa, humeur, volgt_nog).
+
+isa(achilles, gorilla).
+ prop(achilles, specific, artis).
+ prop(achilles, geslacht, man).
+ prop(achilles, geboorte, 21/1/1989).
+ prop(achilles, geboorteplaats,artis).
+ prop(achilles, aantal_jongen, 2).
+ prop(achilles, ziekte, volgt_nog).
+ prop(achilles, mood, volgt_nog).
+ prop(achilles, humeur, volgt_nog).
+
+isa(vita, gorilla).
+ prop(vita, specific, artis).
+ prop(vita, geslacht, vrouw).
+ prop(vita, geboorte, 9/3/2005).
+ prop(vita, geboorteplaats,artis).
+ prop(vita, aantal_jongen, 2).
+ prop(vita, ziekte, volgt_nog).
+ prop(vita, mood, volgt_nog).
+ prop(vita, humeur, volgt_nog).
+
+isa(falco, gorilla).
+ prop(falco, specific, artis).
+ prop(falco, geslacht, man).
+ prop(falco, geboorte, 17/6/2003).
+ prop(falco, geboorteplaats,artis).
+ prop(falco, aantal_jongen, 2).
+ prop(falco, ziekte, volgt_nog).
+ prop(falco, mood, volgt_nog).
+ prop(falco, humeur, volgt_nog).
+
+isa(wampy, gorilla).
+ prop(wampy, specific, artis).
+ prop(wampy, geslacht, vrouw).
+ prop(wampy, geboorte, 10/3/2004).
+ prop(wampy, geboorteplaats,wild).
+ prop(wampy, aantal_jongen, 6).
+ prop(wampy, ziekte, volgt_nog).
+ prop(wampy, mood, volgt_nog).
+ prop(wampy, humeur, volgt_nog).
+
+
+
+/****** chimpansee ******/
+isa(lily, chimpansee).
+ prop(lily, specific, artis).
+ prop(lily, geslacht, man).
+ prop(lily, geboorte, 26/6/1997).
+ prop(lily, geboorteplaats,artis).
+ prop(lily, aantal_jongen, 8).
+ prop(lily, allergie, gras).
+ prop(lily, ziekte, volgt_nog).
+ prop(lily, mood, volgt_nog).
+ prop(lily, humeur, volgt_nog).
+
+isa(frits, chimpansee).
+ prop(frits, specific, artis).
+ prop(frits, geslacht, man).
+ prop(frits, geboorte, 17/8/2000).
+ prop(frits, geboorteplaats,artis).
+ prop(frits, aantal_jongen, 3).
+ prop(frits, ziekte, volgt_nog).
+ prop(frits, mood, volgt_nog).
+ prop(frits, humeur, volgt_nog).
+
+isa(willemien, chimpansee).
+ prop(willemien, specific, artis).
+ prop(willemien, geslacht, vrouw).
+ prop(willemien, geboorte, 3/11/1992).
+ prop(willemien, geboorteplaats,artis).
+ prop(willemien, aantal_jongen, 5).
+ prop(willemien, ziekte, volgt_nog).
+ prop(willemien, mood, volgt_nog).
+ prop(willemien, humeur, volgt_nog).
+
+isa(okalani, chimpansee).
+ prop(okalani, specific, artis).
+ prop(okalani, geslacht, vrouw).
+ prop(okalani, geboorte, 21/7/2006).
+ prop(okalani, geboorteplaats,artis).
+ prop(okalani, aantal_jongen, 1).
+ prop(okalani, ziekte, volgt_nog).
+ prop(okalani, mood, volgt_nog).
+ prop(okalani, humeur, volgt_nog).
+
+isa(leiko, chimpansee).
+ prop(leiko, specific, artis).
+ prop(leiko, geslacht, vrouw).
+ prop(leiko, geboorte, 31/8/2005).
+ prop(leiko, geboorteplaats,artis).
+ prop(leiko, aantal_jongen, 2).
+ prop(leiko, allergie, vlees).
+ prop(leiko, ziekte, volgt_nog).
+ prop(leiko, mood, volgt_nog).
+ prop(leiko, humeur, volgt_nog).
+
+
+
+/****** bredeweg ******/
+isa(natala, bredeweg).
+ prop(natala, specific, artis).
+ prop(natala, geslacht, vrouw).
+ prop(natala, geboorte, 6/7/1991).
+ prop(natala, geboorteplaats,wild).
+ prop(natala, aantal_jongen, 6).
+ prop(natala, ziekte, volgt_nog).
+ prop(natala, mood, volgt_nog).
+ prop(natala, humeur, volgt_nog).
+
+isa(alissa, bredeweg).
+ prop(alissa, specific, artis).
+ prop(alissa, geslacht, vrouw).
+ prop(alissa, geboorte, 21/5/2004).
+ prop(alissa, geboorteplaats,artis).
+ prop(alissa, aantal_jongen, 5).
+ prop(alissa, ziekte, volgt_nog).
+ prop(alissa, mood, volgt_nog).
+ prop(alissa, humeur, volgt_nog).
+
+isa(quade, bredeweg).
+ prop(quade, specific, artis).
+ prop(quade, geslacht, man).
+ prop(quade, geboorte, 5/5/2001).
+ prop(quade, geboorteplaats,artis).
+ prop(quade, aantal_jongen, 2).
+ prop(quade, ziekte, volgt_nog).
+ prop(quade, mood, volgt_nog).
+ prop(quade, humeur, volgt_nog).
+
+isa(xion, bredeweg).
+ prop(xion, specific, artis).
+ prop(xion, geslacht, vrouw).
+ prop(xion, geboorte, 9/9/1989).
+ prop(xion, geboorteplaats,artis).
+ prop(xion, aantal_jongen, 5).
+ prop(xion, ziekte, volgt_nog).
+ prop(xion, mood, volgt_nog).
+ prop(xion, humeur, volgt_nog).
+
+isa(mokka, bredeweg).
+ prop(mokka, specific, artis).
+ prop(mokka, geslacht, vrouw).
+ prop(mokka, geboorte, 24/1/1999).
+ prop(mokka, geboorteplaats,artis).
+ prop(mokka, aantal_jongen, 2).
+ prop(mokka, ziekte, volgt_nog).
+ prop(mokka, mood, volgt_nog).
+ prop(mokka, humeur, volgt_nog).
+
+isa(moody, bredeweg).
+ prop(moody, specific, artis).
+ prop(moody, geslacht, vrouw).
+ prop(moody, geboorte, 12/11/1991).
+ prop(moody, geboorteplaats,wild).
+ prop(moody, aantal_jongen, 8).
+ prop(moody, ziekte, volgt_nog).
+ prop(moody, mood, volgt_nog).
+ prop(moody, humeur, volgt_nog).
+
+
+
+/****** valk ******/
+isa(boo, valk).
+ prop(boo, specific, artis).
+ prop(boo, geslacht, vrouw).
+ prop(boo, geboorte, 4/6/1994).
+ prop(boo, geboorteplaats,wild).
+ prop(boo, aantal_jongen, 1).
+ prop(boo, ziekte, volgt_nog).
+ prop(boo, mood, volgt_nog).
+ prop(boo, humeur, volgt_nog).
+
+isa(jesper, valk).
+ prop(jesper, specific, artis).
+ prop(jesper, geslacht, man).
+ prop(jesper, geboorte, 28/5/1999).
+ prop(jesper, geboorteplaats,wild).
+ prop(jesper, aantal_jongen, 0).
+ prop(jesper, ziekte, volgt_nog).
+ prop(jesper, mood, volgt_nog).
+ prop(jesper, humeur, volgt_nog).
+
+isa(xiste, valk).
+ prop(xiste, specific, artis).
+ prop(xiste, geslacht, vrouw).
+ prop(xiste, geboorte, 21/10/2003).
+ prop(xiste, geboorteplaats,artis).
+ prop(xiste, aantal_jongen, 5).
+ prop(xiste, ziekte, volgt_nog).
+ prop(xiste, mood, volgt_nog).
+ prop(xiste, humeur, volgt_nog).
+
+isa(ziza, valk).
+ prop(ziza, specific, artis).
+ prop(ziza, geslacht, man).
+ prop(ziza, geboorte, 7/12/2001).
+ prop(ziza, geboorteplaats,artis).
+ prop(ziza, aantal_jongen, 4).
+ prop(ziza, ziekte, volgt_nog).
+ prop(ziza, mood, volgt_nog).
+ prop(ziza, humeur, volgt_nog).
+
+isa(jumper, valk).
+ prop(jumper, specific, artis).
+ prop(jumper, geslacht, man).
+ prop(jumper, geboorte, 27/1/2007).
+ prop(jumper, geboorteplaats,artis).
+ prop(jumper, aantal_jongen, 7).
+ prop(jumper, ziekte, volgt_nog).
+ prop(jumper, mood, volgt_nog).
+ prop(jumper, humeur, volgt_nog).
+
+isa(sassy, valk).
+ prop(sassy, specific, artis).
+ prop(sassy, geslacht, man).
+ prop(sassy, geboorte, 10/9/1999).
+ prop(sassy, geboorteplaats,wild).
+ prop(sassy, aantal_jongen, 1).
+ prop(sassy, ziekte, volgt_nog).
+ prop(sassy, mood, volgt_nog).
+ prop(sassy, humeur, volgt_nog).
+
+isa(genie, valk).
+ prop(genie, specific, artis).
+ prop(genie, geslacht, vrouw).
+ prop(genie, geboorte, 29/5/2001).
+ prop(genie, geboorteplaats,artis).
+ prop(genie, aantal_jongen, 5).
+ prop(genie, ziekte, volgt_nog).
+ prop(genie, mood, volgt_nog).
+ prop(genie, humeur, volgt_nog).
+
+isa(cael, valk).
+ prop(cael, specific, artis).
+ prop(cael, geslacht, man).
+ prop(cael, geboorte, 14/7/1989).
+ prop(cael, geboorteplaats,artis).
+ prop(cael, aantal_jongen, 0).
+ prop(cael, ziekte, volgt_nog).
+ prop(cael, mood, volgt_nog).
+ prop(cael, humeur, volgt_nog).
+
+isa(robijn, valk).
+ prop(robijn, specific, artis).
+ prop(robijn, geslacht, vrouw).
+ prop(robijn, geboorte, 4/10/2003).
+ prop(robijn, geboorteplaats,artis).
+ prop(robijn, aantal_jongen, 5).
+ prop(robijn, ziekte, volgt_nog).
+ prop(robijn, mood, volgt_nog).
+ prop(robijn, humeur, volgt_nog).
+
+
+
+/****** kraanvogel ******/
+isa(anouk, kraanvogel).
+ prop(anouk, specific, artis).
+ prop(anouk, geslacht, vrouw).
+ prop(anouk, geboorte, 12/10/1993).
+ prop(anouk, geboorteplaats,artis).
+ prop(anouk, aantal_jongen, 3).
+ prop(anouk, allergie, vlees).
+ prop(anouk, ziekte, volgt_nog).
+ prop(anouk, mood, volgt_nog).
+ prop(anouk, humeur, volgt_nog).
+
+isa(odysseus, kraanvogel).
+ prop(odysseus, specific, artis).
+ prop(odysseus, geslacht, vrouw).
+ prop(odysseus, geboorte, 28/8/2002).
+ prop(odysseus, geboorteplaats,wild).
+ prop(odysseus, aantal_jongen, 7).
+ prop(odysseus, ziekte, volgt_nog).
+ prop(odysseus, mood, volgt_nog).
+ prop(odysseus, humeur, volgt_nog).
+
+isa(eefje, kraanvogel).
+ prop(eefje, specific, artis).
+ prop(eefje, geslacht, man).
+ prop(eefje, geboorte, 27/2/2008).
+ prop(eefje, geboorteplaats,artis).
+ prop(eefje, aantal_jongen, 1).
+ prop(eefje, ziekte, volgt_nog).
+ prop(eefje, mood, volgt_nog).
+ prop(eefje, humeur, volgt_nog).
+
+isa(faye, kraanvogel).
+ prop(faye, specific, artis).
+ prop(faye, geslacht, vrouw).
+ prop(faye, geboorte, 22/2/2006).
+ prop(faye, geboorteplaats,artis).
+ prop(faye, aantal_jongen, 2).
+ prop(faye, ziekte, volgt_nog).
+ prop(faye, mood, volgt_nog).
+ prop(faye, humeur, volgt_nog).
+
+isa(goa, kraanvogel).
+ prop(goa, specific, artis).
+ prop(goa, geslacht, vrouw).
+ prop(goa, geboorte, 6/8/1996).
+ prop(goa, geboorteplaats,wild).
+ prop(goa, aantal_jongen, 8).
+ prop(goa, allergie, borstel).
+ prop(goa, ziekte, volgt_nog).
+ prop(goa, mood, volgt_nog).
+ prop(goa, humeur, volgt_nog).
+
+isa(shaft, kraanvogel).
+ prop(shaft, specific, artis).
+ prop(shaft, geslacht, man).
+ prop(shaft, geboorte, 8/12/1997).
+ prop(shaft, geboorteplaats,artis).
+ prop(shaft, aantal_jongen, 8).
+ prop(shaft, ziekte, volgt_nog).
+ prop(shaft, mood, volgt_nog).
+ prop(shaft, humeur, volgt_nog).
+
+isa(geo, kraanvogel).
+ prop(geo, specific, artis).
+ prop(geo, geslacht, vrouw).
+ prop(geo, geboorte, 11/9/1997).
+ prop(geo, geboorteplaats,artis).
+ prop(geo, aantal_jongen, 5).
+ prop(geo, ziekte, volgt_nog).
+ prop(geo, mood, volgt_nog).
+ prop(geo, humeur, volgt_nog).
+
+isa(kiss, kraanvogel).
+ prop(kiss, specific, artis).
+ prop(kiss, geslacht, vrouw).
+ prop(kiss, geboorte, 11/2/2008).
+ prop(kiss, geboorteplaats,artis).
+ prop(kiss, aantal_jongen, 5).
+ prop(kiss, ziekte, volgt_nog).
+ prop(kiss, mood, volgt_nog).
+ prop(kiss, humeur, volgt_nog).
+
+
+
+/****** flamingo ******/
+isa(matti, flamingo).
+ prop(matti, specific, artis).
+ prop(matti, geslacht, man).
+ prop(matti, geboorte, 15/5/1991).
+ prop(matti, geboorteplaats,artis).
+ prop(matti, aantal_jongen, 6).
+ prop(matti, ziekte, volgt_nog).
+ prop(matti, mood, volgt_nog).
+ prop(matti, humeur, volgt_nog).
+
+isa(lancelot, flamingo).
+ prop(lancelot, specific, artis).
+ prop(lancelot, geslacht, man).
+ prop(lancelot, geboorte, 16/2/1993).
+ prop(lancelot, geboorteplaats,artis).
+ prop(lancelot, aantal_jongen, 1).
+ prop(lancelot, allergie, borstel).
+ prop(lancelot, ziekte, volgt_nog).
+ prop(lancelot, mood, volgt_nog).
+ prop(lancelot, humeur, volgt_nog).
+
+isa(joy, flamingo).
+ prop(joy, specific, artis).
+ prop(joy, geslacht, vrouw).
+ prop(joy, geboorte, 13/2/2002).
+ prop(joy, geboorteplaats,artis).
+ prop(joy, aantal_jongen, 5).
+ prop(joy, ziekte, volgt_nog).
+ prop(joy, mood, volgt_nog).
+ prop(joy, humeur, volgt_nog).
+
+isa(tommy, flamingo).
+ prop(tommy, specific, artis).
+ prop(tommy, geslacht, vrouw).
+ prop(tommy, geboorte, 28/7/1992).
+ prop(tommy, geboorteplaats,artis).
+ prop(tommy, aantal_jongen, 7).
+ prop(tommy, allergie, gras).
+ prop(tommy, ziekte, volgt_nog).
+ prop(tommy, mood, volgt_nog).
+ prop(tommy, humeur, volgt_nog).
+
+isa(elam, flamingo).
+ prop(elam, specific, artis).
+ prop(elam, geslacht, vrouw).
+ prop(elam, geboorte, 29/5/2002).
+ prop(elam, geboorteplaats,artis).
+ prop(elam, aantal_jongen, 7).
+ prop(elam, ziekte, volgt_nog).
+ prop(elam, mood, volgt_nog).
+ prop(elam, humeur, volgt_nog).
+
+isa(terrance, flamingo).
+ prop(terrance, specific, artis).
+ prop(terrance, geslacht, vrouw).
+ prop(terrance, geboorte, 10/11/2008).
+ prop(terrance, geboorteplaats,artis).
+ prop(terrance, aantal_jongen, 7).
+ prop(terrance, ziekte, volgt_nog).
+ prop(terrance, mood, volgt_nog).
+ prop(terrance, humeur, volgt_nog).
+
+isa(cooper, flamingo).
+ prop(cooper, specific, artis).
+ prop(cooper, geslacht, man).
+ prop(cooper, geboorte, 8/12/1990).
+ prop(cooper, geboorteplaats,artis).
+ prop(cooper, aantal_jongen, 2).
+ prop(cooper, ziekte, volgt_nog).
+ prop(cooper, mood, volgt_nog).
+ prop(cooper, humeur, volgt_nog).
+
+isa(bill, flamingo).
+ prop(bill, specific, artis).
+ prop(bill, geslacht, man).
+ prop(bill, geboorte, 22/4/1989).
+ prop(bill, geboorteplaats,artis).
+ prop(bill, aantal_jongen, 6).
+ prop(bill, ziekte, volgt_nog).
+ prop(bill, mood, volgt_nog).
+ prop(bill, humeur, volgt_nog).
+
+
+
+/****** ibis ******/
+isa(philippe, ibis).
+ prop(philippe, specific, artis).
+ prop(philippe, geslacht, man).
+ prop(philippe, geboorte, 28/5/1993).
+ prop(philippe, geboorteplaats,artis).
+ prop(philippe, aantal_jongen, 2).
+ prop(philippe, ziekte, volgt_nog).
+ prop(philippe, mood, volgt_nog).
+ prop(philippe, humeur, volgt_nog).
+
+isa(bert, ibis).
+ prop(bert, specific, artis).
+ prop(bert, geslacht, vrouw).
+ prop(bert, geboorte, 22/11/1990).
+ prop(bert, geboorteplaats,artis).
+ prop(bert, aantal_jongen, 4).
+ prop(bert, ziekte, volgt_nog).
+ prop(bert, mood, volgt_nog).
+ prop(bert, humeur, volgt_nog).
+
+isa(remy, ibis).
+ prop(remy, specific, artis).
+ prop(remy, geslacht, vrouw).
+ prop(remy, geboorte, 23/9/2001).
+ prop(remy, geboorteplaats,artis).
+ prop(remy, aantal_jongen, 4).
+ prop(remy, allergie, gras).
+ prop(remy, ziekte, volgt_nog).
+ prop(remy, mood, volgt_nog).
+ prop(remy, humeur, volgt_nog).
+
+isa(sana, ibis).
+ prop(sana, specific, artis).
+ prop(sana, geslacht, man).
+ prop(sana, geboorte, 18/11/2006).
+ prop(sana, geboorteplaats,artis).
+ prop(sana, aantal_jongen, 1).
+ prop(sana, ziekte, volgt_nog).
+ prop(sana, mood, volgt_nog).
+ prop(sana, humeur, volgt_nog).
+
+isa(easter, ibis).
+ prop(easter, specific, artis).
+ prop(easter, geslacht, vrouw).
+ prop(easter, geboorte, 30/5/1995).
+ prop(easter, geboorteplaats,wild).
+ prop(easter, aantal_jongen, 8).
+ prop(easter, ziekte, volgt_nog).
+ prop(easter, mood, volgt_nog).
+ prop(easter, humeur, volgt_nog).
+
+isa(uma, ibis).
+ prop(uma, specific, artis).
+ prop(uma, geslacht, man).
+ prop(uma, geboorte, 5/4/2004).
+ prop(uma, geboorteplaats,wild).
+ prop(uma, aantal_jongen, 4).
+ prop(uma, ziekte, volgt_nog).
+ prop(uma, mood, volgt_nog).
+ prop(uma, humeur, volgt_nog).
+
+isa(snoopy, ibis).
+ prop(snoopy, specific, artis).
+ prop(snoopy, geslacht, vrouw).
+ prop(snoopy, geboorte, 10/8/2006).
+ prop(snoopy, geboorteplaats,artis).
+ prop(snoopy, aantal_jongen, 2).
+ prop(snoopy, ziekte, volgt_nog).
+ prop(snoopy, mood, volgt_nog).
+ prop(snoopy, humeur, volgt_nog).
+
+isa(coco, ibis).
+ prop(coco, specific, artis).
+ prop(coco, geslacht, vrouw).
+ prop(coco, geboorte, 26/8/2005).
+ prop(coco, geboorteplaats,artis).
+ prop(coco, aantal_jongen, 1).
+ prop(coco, ziekte, volgt_nog).
+ prop(coco, mood, volgt_nog).
+ prop(coco, humeur, volgt_nog).
+
+isa(polly, ibis).
+ prop(polly, specific, artis).
+ prop(polly, geslacht, man).
+ prop(polly, geboorte, 28/1/2008).
+ prop(polly, geboorteplaats,artis).
+ prop(polly, aantal_jongen, 7).
+ prop(polly, ziekte, volgt_nog).
+ prop(polly, mood, volgt_nog).
+ prop(polly, humeur, volgt_nog).
+
+isa(itchy, ibis).
+ prop(itchy, specific, artis).
+ prop(itchy, geslacht, vrouw).
+ prop(itchy, geboorte, 7/1/1990).
+ prop(itchy, geboorteplaats,artis).
+ prop(itchy, aantal_jongen, 8).
+ prop(itchy, ziekte, volgt_nog).
+ prop(itchy, mood, volgt_nog).
+ prop(itchy, humeur, volgt_nog).
+
+isa(aileen, ibis).
+ prop(aileen, specific, artis).
+ prop(aileen, geslacht, vrouw).
+ prop(aileen, geboorte, 23/1/2000).
+ prop(aileen, geboorteplaats,artis).
+ prop(aileen, aantal_jongen, 2).
+ prop(aileen, ziekte, volgt_nog).
+ prop(aileen, mood, volgt_nog).
+ prop(aileen, humeur, volgt_nog).
+
+isa(lian, ibis).
+ prop(lian, specific, artis).
+ prop(lian, geslacht, man).
+ prop(lian, geboorte, 11/5/1999).
+ prop(lian, geboorteplaats,artis).
+ prop(lian, aantal_jongen, 8).
+ prop(lian, ziekte, volgt_nog).
+ prop(lian, mood, volgt_nog).
+ prop(lian, humeur, volgt_nog).
+
+
+
+/****** kangoeroe ******/
+isa(qutie, kangoeroe).
+ prop(qutie, specific, artis).
+ prop(qutie, geslacht, vrouw).
+ prop(qutie, geboorte, 24/2/2002).
+ prop(qutie, geboorteplaats,artis).
+ prop(qutie, aantal_jongen, 5).
+ prop(qutie, ziekte, volgt_nog).
+ prop(qutie, mood, volgt_nog).
+ prop(qutie, humeur, volgt_nog).
+
+isa(echo, kangoeroe).
+ prop(echo, specific, artis).
+ prop(echo, geslacht, vrouw).
+ prop(echo, geboorte, 5/5/2007).
+ prop(echo, geboorteplaats,artis).
+ prop(echo, aantal_jongen, 1).
+ prop(echo, allergie, gras).
+ prop(echo, ziekte, volgt_nog).
+ prop(echo, mood, volgt_nog).
+ prop(echo, humeur, volgt_nog).
+
+isa(bifi, kangoeroe).
+ prop(bifi, specific, artis).
+ prop(bifi, geslacht, vrouw).
+ prop(bifi, geboorte, 25/3/1991).
+ prop(bifi, geboorteplaats,artis).
+ prop(bifi, aantal_jongen, 8).
+ prop(bifi, ziekte, volgt_nog).
+ prop(bifi, mood, volgt_nog).
+ prop(bifi, humeur, volgt_nog).
+
+isa(levi, kangoeroe).
+ prop(levi, specific, artis).
+ prop(levi, geslacht, vrouw).
+ prop(levi, geboorte, 15/10/1998).
+ prop(levi, geboorteplaats,artis).
+ prop(levi, aantal_jongen, 7).
+ prop(levi, allergie, gras).
+ prop(levi, ziekte, volgt_nog).
+ prop(levi, mood, volgt_nog).
+ prop(levi, humeur, volgt_nog).
+
+isa(veroniek, kangoeroe).
+ prop(veroniek, specific, artis).
+ prop(veroniek, geslacht, vrouw).
+ prop(veroniek, geboorte, 31/10/1993).
+ prop(veroniek, geboorteplaats,artis).
+ prop(veroniek, aantal_jongen, 3).
+ prop(veroniek, allergie, gras).
+ prop(veroniek, ziekte, volgt_nog).
+ prop(veroniek, mood, volgt_nog).
+ prop(veroniek, humeur, volgt_nog).
+
+isa(gompie, kangoeroe).
+ prop(gompie, specific, artis).
+ prop(gompie, geslacht, man).
+ prop(gompie, geboorte, 31/3/2004).
+ prop(gompie, geboorteplaats,artis).
+ prop(gompie, aantal_jongen, 2).
+ prop(gompie, ziekte, volgt_nog).
+ prop(gompie, mood, volgt_nog).
+ prop(gompie, humeur, volgt_nog).
+
+isa(rakker, kangoeroe).
+ prop(rakker, specific, artis).
+ prop(rakker, geslacht, man).
+ prop(rakker, geboorte, 20/2/1996).
+ prop(rakker, geboorteplaats,artis).
+ prop(rakker, aantal_jongen, 8).
+ prop(rakker, ziekte, volgt_nog).
+ prop(rakker, mood, volgt_nog).
+ prop(rakker, humeur, volgt_nog).
+
+isa(chica, kangoeroe).
+ prop(chica, specific, artis).
+ prop(chica, geslacht, man).
+ prop(chica, geboorte, 15/5/1996).
+ prop(chica, geboorteplaats,artis).
+ prop(chica, aantal_jongen, 6).
+ prop(chica, ziekte, volgt_nog).
+ prop(chica, mood, volgt_nog).
+ prop(chica, humeur, volgt_nog).
+
+isa(james, kangoeroe).
+ prop(james, specific, artis).
+ prop(james, geslacht, man).
+ prop(james, geboorte, 17/2/1991).
+ prop(james, geboorteplaats,artis).
+ prop(james, aantal_jongen, 1).
+ prop(james, ziekte, volgt_nog).
+ prop(james, mood, volgt_nog).
+ prop(james, humeur, volgt_nog).
+
+
+
+/****** antilope ******/
+isa(eef, antilope).
+ prop(eef, specific, artis).
+ prop(eef, geslacht, vrouw).
+ prop(eef, geboorte, 7/6/1993).
+ prop(eef, geboorteplaats,artis).
+ prop(eef, aantal_jongen, 2).
+ prop(eef, ziekte, volgt_nog).
+ prop(eef, mood, volgt_nog).
+ prop(eef, humeur, volgt_nog).
+
+isa(gipsy, antilope).
+ prop(gipsy, specific, artis).
+ prop(gipsy, geslacht, vrouw).
+ prop(gipsy, geboorte, 10/7/2002).
+ prop(gipsy, geboorteplaats,wild).
+ prop(gipsy, aantal_jongen, 6).
+ prop(gipsy, ziekte, volgt_nog).
+ prop(gipsy, mood, volgt_nog).
+ prop(gipsy, humeur, volgt_nog).
+
+isa(cinnamon, antilope).
+ prop(cinnamon, specific, artis).
+ prop(cinnamon, geslacht, vrouw).
+ prop(cinnamon, geboorte, 20/7/1997).
+ prop(cinnamon, geboorteplaats,artis).
+ prop(cinnamon, aantal_jongen, 8).
+ prop(cinnamon, ziekte, volgt_nog).
+ prop(cinnamon, mood, volgt_nog).
+ prop(cinnamon, humeur, volgt_nog).
+
+isa(shar, antilope).
+ prop(shar, specific, artis).
+ prop(shar, geslacht, man).
+ prop(shar, geboorte, 5/4/2002).
+ prop(shar, geboorteplaats,artis).
+ prop(shar, aantal_jongen, 0).
+ prop(shar, ziekte, volgt_nog).
+ prop(shar, mood, volgt_nog).
+ prop(shar, humeur, volgt_nog).
+
+isa(boes, antilope).
+ prop(boes, specific, artis).
+ prop(boes, geslacht, man).
+ prop(boes, geboorte, 13/1/2007).
+ prop(boes, geboorteplaats,artis).
+ prop(boes, aantal_jongen, 8).
+ prop(boes, allergie, borstel).
+ prop(boes, ziekte, volgt_nog).
+ prop(boes, mood, volgt_nog).
+ prop(boes, humeur, volgt_nog).
+
+isa(hap, antilope).
+ prop(hap, specific, artis).
+ prop(hap, geslacht, vrouw).
+ prop(hap, geboorte, 26/9/1997).
+ prop(hap, geboorteplaats,artis).
+ prop(hap, aantal_jongen, 5).
+ prop(hap, ziekte, volgt_nog).
+ prop(hap, mood, volgt_nog).
+ prop(hap, humeur, volgt_nog).
+
+isa(lay, antilope).
+ prop(lay, specific, artis).
+ prop(lay, geslacht, man).
+ prop(lay, geboorte, 6/5/1991).
+ prop(lay, geboorteplaats,artis).
+ prop(lay, aantal_jongen, 6).
+ prop(lay, ziekte, volgt_nog).
+ prop(lay, mood, volgt_nog).
+ prop(lay, humeur, volgt_nog).
+
+
+
+/****** pinguin ******/
+isa(zwiffer, pinguin).
+ prop(zwiffer, specific, artis).
+ prop(zwiffer, geslacht, man).
+ prop(zwiffer, geboorte, 3/4/1991).
+ prop(zwiffer, geboorteplaats,artis).
+ prop(zwiffer, aantal_jongen, 8).
+ prop(zwiffer, ziekte, volgt_nog).
+ prop(zwiffer, mood, volgt_nog).
+ prop(zwiffer, humeur, volgt_nog).
+
+
+
+/****** bizon ******/
+isa(ice, bizon).
+ prop(ice, specific, artis).
+ prop(ice, geslacht, man).
+ prop(ice, geboorte, 8/10/2004).
+ prop(ice, geboorteplaats,artis).
+ prop(ice, aantal_jongen, 3).
+ prop(ice, ziekte, volgt_nog).
+ prop(ice, mood, volgt_nog).
+ prop(ice, humeur, volgt_nog).
+
+isa(hector, bizon).
+ prop(hector, specific, artis).
+ prop(hector, geslacht, vrouw).
+ prop(hector, geboorte, 25/5/2001).
+ prop(hector, geboorteplaats,artis).
+ prop(hector, aantal_jongen, 0).
+ prop(hector, ziekte, volgt_nog).
+ prop(hector, mood, volgt_nog).
+ prop(hector, humeur, volgt_nog).
+
+isa(binky, bizon).
+ prop(binky, specific, artis).
+ prop(binky, geslacht, vrouw).
+ prop(binky, geboorte, 27/2/1998).
+ prop(binky, geboorteplaats,artis).
+ prop(binky, aantal_jongen, 7).
+ prop(binky, ziekte, volgt_nog).
+ prop(binky, mood, volgt_nog).
+ prop(binky, humeur, volgt_nog).
+
+isa(hinto, bizon).
+ prop(hinto, specific, artis).
+ prop(hinto, geslacht, man).
+ prop(hinto, geboorte, 12/9/1997).
+ prop(hinto, geboorteplaats,artis).
+ prop(hinto, aantal_jongen, 7).
+ prop(hinto, ziekte, volgt_nog).
+ prop(hinto, mood, volgt_nog).
+ prop(hinto, humeur, volgt_nog).
+
+isa(homer, bizon).
+ prop(homer, specific, artis).
+ prop(homer, geslacht, vrouw).
+ prop(homer, geboorte, 11/4/2008).
+ prop(homer, geboorteplaats,artis).
+ prop(homer, aantal_jongen, 8).
+ prop(homer, ziekte, volgt_nog).
+ prop(homer, mood, volgt_nog).
+ prop(homer, humeur, volgt_nog).
+
+isa(xeno, bizon).
+ prop(xeno, specific, artis).
+ prop(xeno, geslacht, vrouw).
+ prop(xeno, geboorte, 16/11/2008).
+ prop(xeno, geboorteplaats,wild).
+ prop(xeno, aantal_jongen, 5).
+ prop(xeno, ziekte, volgt_nog).
+ prop(xeno, mood, volgt_nog).
+ prop(xeno, humeur, volgt_nog).
+
+isa(ron, bizon).
+ prop(ron, specific, artis).
+ prop(ron, geslacht, vrouw).
+ prop(ron, geboorte, 29/10/1998).
+ prop(ron, geboorteplaats,artis).
+ prop(ron, aantal_jongen, 5).
+ prop(ron, ziekte, volgt_nog).
+ prop(ron, mood, volgt_nog).
+ prop(ron, humeur, volgt_nog).
+
+isa(flo, bizon).
+ prop(flo, specific, artis).
+ prop(flo, geslacht, vrouw).
+ prop(flo, geboorte, 13/6/1990).
+ prop(flo, geboorteplaats,artis).
+ prop(flo, aantal_jongen, 4).
+ prop(flo, ziekte, volgt_nog).
+ prop(flo, mood, volgt_nog).
+ prop(flo, humeur, volgt_nog).
+
+isa(boeba, bizon).
+ prop(boeba, specific, artis).
+ prop(boeba, geslacht, vrouw).
+ prop(boeba, geboorte, 9/7/1994).
+ prop(boeba, geboorteplaats,artis).
+ prop(boeba, aantal_jongen, 7).
+ prop(boeba, ziekte, volgt_nog).
+ prop(boeba, mood, volgt_nog).
+ prop(boeba, humeur, volgt_nog).
+
+isa(vito, bizon).
+ prop(vito, specific, artis).
+ prop(vito, geslacht, man).
+ prop(vito, geboorte, 24/6/1995).
+ prop(vito, geboorteplaats,artis).
+ prop(vito, aantal_jongen, 1).
+ prop(vito, ziekte, volgt_nog).
+ prop(vito, mood, volgt_nog).
+ prop(vito, humeur, volgt_nog).
+
+
+
+/****** hyena ******/
+isa(laura, hyena).
+ prop(laura, specific, artis).
+ prop(laura, geslacht, vrouw).
+ prop(laura, geboorte, 5/2/2006).
+ prop(laura, geboorteplaats,artis).
+ prop(laura, aantal_jongen, 7).
+ prop(laura, ziekte, volgt_nog).
+ prop(laura, mood, volgt_nog).
+ prop(laura, humeur, volgt_nog).
+
+isa(celerina, hyena).
+ prop(celerina, specific, artis).
+ prop(celerina, geslacht, man).
+ prop(celerina, geboorte, 20/2/2005).
+ prop(celerina, geboorteplaats,artis).
+ prop(celerina, aantal_jongen, 3).
+ prop(celerina, ziekte, volgt_nog).
+ prop(celerina, mood, volgt_nog).
+ prop(celerina, humeur, volgt_nog).
+
+isa(xela, hyena).
+ prop(xela, specific, artis).
+ prop(xela, geslacht, vrouw).
+ prop(xela, geboorte, 17/4/1998).
+ prop(xela, geboorteplaats,artis).
+ prop(xela, aantal_jongen, 0).
+ prop(xela, ziekte, volgt_nog).
+ prop(xela, mood, volgt_nog).
+ prop(xela, humeur, volgt_nog).
+
+isa(mol, hyena).
+ prop(mol, specific, artis).
+ prop(mol, geslacht, vrouw).
+ prop(mol, geboorte, 22/4/2008).
+ prop(mol, geboorteplaats,wild).
+ prop(mol, aantal_jongen, 4).
+ prop(mol, ziekte, volgt_nog).
+ prop(mol, mood, volgt_nog).
+ prop(mol, humeur, volgt_nog).
+
+isa(azana, hyena).
+ prop(azana, specific, artis).
+ prop(azana, geslacht, man).
+ prop(azana, geboorte, 17/3/2002).
+ prop(azana, geboorteplaats,artis).
+ prop(azana, aantal_jongen, 8).
+ prop(azana, ziekte, volgt_nog).
+ prop(azana, mood, volgt_nog).
+ prop(azana, humeur, volgt_nog).
+
+isa(rebel, hyena).
+ prop(rebel, specific, artis).
+ prop(rebel, geslacht, vrouw).
+ prop(rebel, geboorte, 5/9/1993).
+ prop(rebel, geboorteplaats,artis).
+ prop(rebel, aantal_jongen, 7).
+ prop(rebel, allergie, vlees).
+ prop(rebel, ziekte, volgt_nog).
+ prop(rebel, mood, volgt_nog).
+ prop(rebel, humeur, volgt_nog).
+
+isa(yango, hyena).
+ prop(yango, specific, artis).
+ prop(yango, geslacht, man).
+ prop(yango, geboorte, 25/10/2002).
+ prop(yango, geboorteplaats,wild).
+ prop(yango, aantal_jongen, 2).
+ prop(yango, allergie, borstel).
+ prop(yango, ziekte, volgt_nog).
+ prop(yango, mood, volgt_nog).
+ prop(yango, humeur, volgt_nog).
+
+isa(lavinia, hyena).
+ prop(lavinia, specific, artis).
+ prop(lavinia, geslacht, man).
+ prop(lavinia, geboorte, 25/4/2002).
+ prop(lavinia, geboorteplaats,artis).
+ prop(lavinia, aantal_jongen, 3).
+ prop(lavinia, allergie, borstel).
+ prop(lavinia, ziekte, volgt_nog).
+ prop(lavinia, mood, volgt_nog).
+ prop(lavinia, humeur, volgt_nog).
+
+isa(rits, hyena).
+ prop(rits, specific, artis).
+ prop(rits, geslacht, man).
+ prop(rits, geboorte, 11/11/2001).
+ prop(rits, geboorteplaats,artis).
+ prop(rits, aantal_jongen, 1).
+ prop(rits, ziekte, volgt_nog).
+ prop(rits, mood, volgt_nog).
+ prop(rits, humeur, volgt_nog).
+
+isa(uni, hyena).
+ prop(uni, specific, artis).
+ prop(uni, geslacht, vrouw).
+ prop(uni, geboorte, 11/10/1999).
+ prop(uni, geboorteplaats,artis).
+ prop(uni, aantal_jongen, 3).
+ prop(uni, ziekte, volgt_nog).
+ prop(uni, mood, volgt_nog).
+ prop(uni, humeur, volgt_nog).
+
+isa(abby, hyena).
+ prop(abby, specific, artis).
+ prop(abby, geslacht, man).
+ prop(abby, geboorte, 16/11/2007).
+ prop(abby, geboorteplaats,wild).
+ prop(abby, aantal_jongen, 8).
+ prop(abby, ziekte, volgt_nog).
+ prop(abby, mood, volgt_nog).
+ prop(abby, humeur, volgt_nog).
+
+
+
+/****** tijger ******/
+isa(parcha, tijger).
+ prop(parcha, specific, artis).
+ prop(parcha, geslacht, vrouw).
+ prop(parcha, geboorte, 19/6/1995).
+ prop(parcha, geboorteplaats,artis).
+ prop(parcha, aantal_jongen, 1).
+ prop(parcha, ziekte, volgt_nog).
+ prop(parcha, mood, volgt_nog).
+ prop(parcha, humeur, volgt_nog).
+
+
+
+/****** baviaan ******/
+isa(cas, baviaan).
+ prop(cas, specific, artis).
+ prop(cas, geslacht, man).
+ prop(cas, geboorte, 30/9/2000).
+ prop(cas, geboorteplaats,artis).
+ prop(cas, aantal_jongen, 0).
+ prop(cas, allergie, vlees).
+ prop(cas, ziekte, volgt_nog).
+ prop(cas, mood, volgt_nog).
+ prop(cas, humeur, volgt_nog).
+
+
+
+/****** fazant ******/
+isa(vroni, fazant).
+ prop(vroni, specific, artis).
+ prop(vroni, geslacht, man).
+ prop(vroni, geboorte, 26/5/2007).
+ prop(vroni, geboorteplaats,artis).
+ prop(vroni, aantal_jongen, 7).
+ prop(vroni, ziekte, volgt_nog).
+ prop(vroni, mood, volgt_nog).
+ prop(vroni, humeur, volgt_nog).
+
+isa(eman, fazant).
+ prop(eman, specific, artis).
+ prop(eman, geslacht, man).
+ prop(eman, geboorte, 28/10/1990).
+ prop(eman, geboorteplaats,artis).
+ prop(eman, aantal_jongen, 8).
+ prop(eman, ziekte, volgt_nog).
+ prop(eman, mood, volgt_nog).
+ prop(eman, humeur, volgt_nog).
+
+isa(konijn, fazant).
+ prop(konijn, specific, artis).
+ prop(konijn, geslacht, vrouw).
+ prop(konijn, geboorte, 1/5/2005).
+ prop(konijn, geboorteplaats,artis).
+ prop(konijn, aantal_jongen, 1).
+ prop(konijn, ziekte, volgt_nog).
+ prop(konijn, mood, volgt_nog).
+ prop(konijn, humeur, volgt_nog).
+
+
+
+/****** eend ******/
+isa(donder, eend).
+ prop(donder, specific, artis).
+ prop(donder, geslacht, man).
+ prop(donder, geboorte, 11/5/2007).
+ prop(donder, geboorteplaats,artis).
+ prop(donder, aantal_jongen, 6).
+ prop(donder, ziekte, volgt_nog).
+ prop(donder, mood, volgt_nog).
+ prop(donder, humeur, volgt_nog).
+
+isa(zoef, eend).
+ prop(zoef, specific, artis).
+ prop(zoef, geslacht, man).
+ prop(zoef, geboorte, 15/5/1992).
+ prop(zoef, geboorteplaats,artis).
+ prop(zoef, aantal_jongen, 6).
+ prop(zoef, ziekte, volgt_nog).
+ prop(zoef, mood, volgt_nog).
+ prop(zoef, humeur, volgt_nog).
+
+isa(ivo, eend).
+ prop(ivo, specific, artis).
+ prop(ivo, geslacht, man).
+ prop(ivo, geboorte, 16/10/1997).
+ prop(ivo, geboorteplaats,artis).
+ prop(ivo, aantal_jongen, 0).
+ prop(ivo, ziekte, volgt_nog).
+ prop(ivo, mood, volgt_nog).
+ prop(ivo, humeur, volgt_nog).
+
+isa(ster, eend).
+ prop(ster, specific, artis).
+ prop(ster, geslacht, vrouw).
+ prop(ster, geboorte, 5/7/1992).
+ prop(ster, geboorteplaats,wild).
+ prop(ster, aantal_jongen, 3).
+ prop(ster, ziekte, volgt_nog).
+ prop(ster, mood, volgt_nog).
+ prop(ster, humeur, volgt_nog).
+
+isa(xaviar, eend).
+ prop(xaviar, specific, artis).
+ prop(xaviar, geslacht, vrouw).
+ prop(xaviar, geboorte, 27/1/1991).
+ prop(xaviar, geboorteplaats,artis).
+ prop(xaviar, aantal_jongen, 1).
+ prop(xaviar, ziekte, volgt_nog).
+ prop(xaviar, mood, volgt_nog).
+ prop(xaviar, humeur, volgt_nog).
+
+isa(ginger, eend).
+ prop(ginger, specific, artis).
+ prop(ginger, geslacht, vrouw).
+ prop(ginger, geboorte, 4/12/1998).
+ prop(ginger, geboorteplaats,artis).
+ prop(ginger, aantal_jongen, 1).
+ prop(ginger, ziekte, volgt_nog).
+ prop(ginger, mood, volgt_nog).
+ prop(ginger, humeur, volgt_nog).
+
+isa(muis, eend).
+ prop(muis, specific, artis).
+ prop(muis, geslacht, man).
+ prop(muis, geboorte, 10/8/1998).
+ prop(muis, geboorteplaats,artis).
+ prop(muis, aantal_jongen, 0).
+ prop(muis, allergie, verzorger).
+ prop(muis, ziekte, volgt_nog).
+ prop(muis, mood, volgt_nog).
+ prop(muis, humeur, volgt_nog).
+
+isa(droedel, eend).
+ prop(droedel, specific, artis).
+ prop(droedel, geslacht, man).
+ prop(droedel, geboorte, 15/3/1999).
+ prop(droedel, geboorteplaats,wild).
+ prop(droedel, aantal_jongen, 8).
+ prop(droedel, allergie, gras).
+ prop(droedel, ziekte, volgt_nog).
+ prop(droedel, mood, volgt_nog).
+ prop(droedel, humeur, volgt_nog).
+
+isa(jojo, eend).
+ prop(jojo, specific, artis).
+ prop(jojo, geslacht, vrouw).
+ prop(jojo, geboorte, 11/7/2008).
+ prop(jojo, geboorteplaats,artis).
+ prop(jojo, aantal_jongen, 2).
+ prop(jojo, ziekte, volgt_nog).
+ prop(jojo, mood, volgt_nog).
+ prop(jojo, humeur, volgt_nog).
+
+
+
+/****** pelikaan ******/
+isa(ezra, pelikaan).
+ prop(ezra, specific, artis).
+ prop(ezra, geslacht, man).
+ prop(ezra, geboorte, 21/7/1993).
+ prop(ezra, geboorteplaats,artis).
+ prop(ezra, aantal_jongen, 2).
+ prop(ezra, ziekte, volgt_nog).
+ prop(ezra, mood, volgt_nog).
+ prop(ezra, humeur, volgt_nog).
+
+isa(bijou, pelikaan).
+ prop(bijou, specific, artis).
+ prop(bijou, geslacht, man).
+ prop(bijou, geboorte, 25/8/1998).
+ prop(bijou, geboorteplaats,artis).
+ prop(bijou, aantal_jongen, 1).
+ prop(bijou, ziekte, volgt_nog).
+ prop(bijou, mood, volgt_nog).
+ prop(bijou, humeur, volgt_nog).
+
+isa(gandalf, pelikaan).
+ prop(gandalf, specific, artis).
+ prop(gandalf, geslacht, man).
+ prop(gandalf, geboorte, 11/9/2008).
+ prop(gandalf, geboorteplaats,wild).
+ prop(gandalf, aantal_jongen, 1).
+ prop(gandalf, ziekte, volgt_nog).
+ prop(gandalf, mood, volgt_nog).
+ prop(gandalf, humeur, volgt_nog).
+
+isa(dipsy, pelikaan).
+ prop(dipsy, specific, artis).
+ prop(dipsy, geslacht, vrouw).
+ prop(dipsy, geboorte, 17/5/1992).
+ prop(dipsy, geboorteplaats,artis).
+ prop(dipsy, aantal_jongen, 0).
+ prop(dipsy, allergie, vlees).
+ prop(dipsy, ziekte, volgt_nog).
+ prop(dipsy, mood, volgt_nog).
+ prop(dipsy, humeur, volgt_nog).
+
+isa(mabel, pelikaan).
+ prop(mabel, specific, artis).
+ prop(mabel, geslacht, man).
+ prop(mabel, geboorte, 29/2/1999).
+ prop(mabel, geboorteplaats,artis).
+ prop(mabel, aantal_jongen, 3).
+ prop(mabel, ziekte, volgt_nog).
+ prop(mabel, mood, volgt_nog).
+ prop(mabel, humeur, volgt_nog).
+
+isa(clea, pelikaan).
+ prop(clea, specific, artis).
+ prop(clea, geslacht, vrouw).
+ prop(clea, geboorte, 9/1/1996).
+ prop(clea, geboorteplaats,artis).
+ prop(clea, aantal_jongen, 8).
+ prop(clea, ziekte, volgt_nog).
+ prop(clea, mood, volgt_nog).
+ prop(clea, humeur, volgt_nog).
+
+isa(toby, pelikaan).
+ prop(toby, specific, artis).
+ prop(toby, geslacht, vrouw).
+ prop(toby, geboorte, 16/11/2002).
+ prop(toby, geboorteplaats,artis).
+ prop(toby, aantal_jongen, 8).
+ prop(toby, ziekte, volgt_nog).
+ prop(toby, mood, volgt_nog).
+ prop(toby, humeur, volgt_nog).
+
+isa(micha, pelikaan).
+ prop(micha, specific, artis).
+ prop(micha, geslacht, vrouw).
+ prop(micha, geboorte, 18/12/2002).
+ prop(micha, geboorteplaats,artis).
+ prop(micha, aantal_jongen, 7).
+ prop(micha, ziekte, volgt_nog).
+ prop(micha, mood, volgt_nog).
+ prop(micha, humeur, volgt_nog).
+
+isa(koya, pelikaan).
+ prop(koya, specific, artis).
+ prop(koya, geslacht, man).
+ prop(koya, geboorte, 27/4/1998).
+ prop(koya, geboorteplaats,wild).
+ prop(koya, aantal_jongen, 5).
+ prop(koya, ziekte, volgt_nog).
+ prop(koya, mood, volgt_nog).
+ prop(koya, humeur, volgt_nog).
+
+
+
+/****** krokodil ******/
+isa(stip, krokodil).
+ prop(stip, specific, artis).
+ prop(stip, geslacht, vrouw).
+ prop(stip, geboorte, 9/4/2000).
+ prop(stip, geboorteplaats,artis).
+ prop(stip, aantal_jongen, 5).
+ prop(stip, ziekte, volgt_nog).
+ prop(stip, mood, volgt_nog).
+ prop(stip, humeur, volgt_nog).
+
+isa(guppie, krokodil).
+ prop(guppie, specific, artis).
+ prop(guppie, geslacht, man).
+ prop(guppie, geboorte, 23/4/1999).
+ prop(guppie, geboorteplaats,artis).
+ prop(guppie, aantal_jongen, 1).
+ prop(guppie, ziekte, volgt_nog).
+ prop(guppie, mood, volgt_nog).
+ prop(guppie, humeur, volgt_nog).
+
+isa(schnappie, krokodil).
+ prop(schnappie, specific, artis).
+ prop(schnappie, geslacht, man).
+ prop(schnappie, geboorte, 29/7/1995).
+ prop(schnappie, geboorteplaats,wild).
+ prop(schnappie, aantal_jongen, 6).
+ prop(schnappie, ziekte, volgt_nog).
+ prop(schnappie, mood, volgt_nog).
+ prop(schnappie, humeur, volgt_nog).
+
+isa(ayla, krokodil).
+ prop(ayla, specific, artis).
+ prop(ayla, geslacht, vrouw).
+ prop(ayla, geboorte, 17/8/2001).
+ prop(ayla, geboorteplaats,artis).
+ prop(ayla, aantal_jongen, 0).
+ prop(ayla, ziekte, volgt_nog).
+ prop(ayla, mood, volgt_nog).
+ prop(ayla, humeur, volgt_nog).
+
+isa(iris, krokodil).
+ prop(iris, specific, artis).
+ prop(iris, geslacht, vrouw).
+ prop(iris, geboorte, 9/4/2002).
+ prop(iris, geboorteplaats,artis).
+ prop(iris, aantal_jongen, 2).
+ prop(iris, ziekte, volgt_nog).
+ prop(iris, mood, volgt_nog).
+ prop(iris, humeur, volgt_nog).
+
+isa(tiamo, krokodil).
+ prop(tiamo, specific, artis).
+ prop(tiamo, geslacht, man).
+ prop(tiamo, geboorte, 29/12/2007).
+ prop(tiamo, geboorteplaats,artis).
+ prop(tiamo, aantal_jongen, 0).
+ prop(tiamo, ziekte, volgt_nog).
+ prop(tiamo, mood, volgt_nog).
+ prop(tiamo, humeur, volgt_nog).
+
+
+
+/****** haai ******/
+isa(diego, haai).
+ prop(diego, specific, artis).
+ prop(diego, geslacht, man).
+ prop(diego, geboorte, 27/5/1993).
+ prop(diego, geboorteplaats,artis).
+ prop(diego, aantal_jongen, 1).
+ prop(diego, ziekte, volgt_nog).
+ prop(diego, mood, volgt_nog).
+ prop(diego, humeur, volgt_nog).
+
+isa(imke, haai).
+ prop(imke, specific, artis).
+ prop(imke, geslacht, man).
+ prop(imke, geboorte, 31/9/2004).
+ prop(imke, geboorteplaats,artis).
+ prop(imke, aantal_jongen, 3).
+ prop(imke, ziekte, volgt_nog).
+ prop(imke, mood, volgt_nog).
+ prop(imke, humeur, volgt_nog).
+
+isa(dodo, haai).
+ prop(dodo, specific, artis).
+ prop(dodo, geslacht, vrouw).
+ prop(dodo, geboorte, 22/3/1998).
+ prop(dodo, geboorteplaats,artis).
+ prop(dodo, aantal_jongen, 0).
+ prop(dodo, ziekte, volgt_nog).
+ prop(dodo, mood, volgt_nog).
+ prop(dodo, humeur, volgt_nog).
+
+isa(qissi, haai).
+ prop(qissi, specific, artis).
+ prop(qissi, geslacht, man).
+ prop(qissi, geboorte, 24/9/1996).
+ prop(qissi, geboorteplaats,artis).
+ prop(qissi, aantal_jongen, 2).
+ prop(qissi, ziekte, volgt_nog).
+ prop(qissi, mood, volgt_nog).
+ prop(qissi, humeur, volgt_nog).
+
+isa(ghita, haai).
+ prop(ghita, specific, artis).
+ prop(ghita, geslacht, man).
+ prop(ghita, geboorte, 9/11/1996).
+ prop(ghita, geboorteplaats,artis).
+ prop(ghita, aantal_jongen, 0).
+ prop(ghita, ziekte, volgt_nog).
+ prop(ghita, mood, volgt_nog).
+ prop(ghita, humeur, volgt_nog).
+
+isa(pepita, haai).
+ prop(pepita, specific, artis).
+ prop(pepita, geslacht, man).
+ prop(pepita, geboorte, 2/10/2004).
+ prop(pepita, geboorteplaats,artis).
+ prop(pepita, aantal_jongen, 0).
+ prop(pepita, ziekte, volgt_nog).
+ prop(pepita, mood, volgt_nog).
+ prop(pepita, humeur, volgt_nog).
+
+
+
+% Specifieke dieren
+% 
+% Robrecht:
+% ideeen voor opbouw specifieke dierenlijst
+% 
+% isa(simba, leeuw).
+% prop(simba, allergie, gras).
+% prop(simba, leeftijd, 5).
+% prop(simba, geslacht, man).
+%
+% Het lijkt mij leuk om uit Martijn zijn namenbestand, een naam willekeurig deze eigenschappen mee te geven
+% dus:
+% isa(Naam, Animal).
+% prop(Animal, allergie, geen).  % dit statistisch gezien (90% geen) (4% gras) (2% vlees) (2% borstel) (1% verzorger)
+% prop(Animal, leeftijd, Age).  (tussen 0 en 20, want geen zin om dit specifiek te doen per diersoort:P)
+% prop(Animal, geslacht, Gender).  (lekker logisch toch (statistisch volgens mij 51% vrouw en 49% man
+%
+% Structurele kennis
+% Database artis
+% Auteur: Robrecht Jurriaans
+ 
+loc(X, Y):-
+	prop(X, loc, Y).
+
+naam(X, Y):-
+	prop(X, name, Y).
+
+listprops(X, Y):-
+	findall(Z, prop(X, _, Z), Y).
+
+distance(X, Y, Dist):-
+	prop(X, loc, X1/Y1),!,
+	prop(Y, loc, X2/Y2),!,
+	Dist is sqrt(((X1-X2)**2)+((Y1-Y2)**2)).
+
+isa(voliere, gebouw).
+isa(terrarium, gebouw).
+isa(vijver, gebouw).
+isa(aquarium, gebouw).
+isa(kooi, gebouw).
+
+isa(1, voliere).
+isa(2, vijver).
+isa(3, kooi).
+isa(4, kooi).
+isa(5, kooi).
+isa(6, kooi).
+isa(7, kooi).
+isa(8, kooi).
+isa(9, kooi).
+isa(10, kooi).
+isa(11, kooi).
+isa(12, kooi).
+isa(13, kooi).
+isa(14, kooi).
+isa(15, kooi).
+isa(16, kooi).
+isa(17, kooi).
+isa(18, kooi).
+isa(19, vijver).
+isa(20, kooi).
+isa(21, kooi).
+isa(22, kooi).
+isa(23, kooi).
+isa(24, kooi).
+isa(25, kooi).
+isa(26, kooi).
+isa(27, vijver).
+isa(28, vijver).
+isa(29, terrarium).
+isa(30, kooi).
+isa(31, kooi).
+isa(32, aquarium).
+
+% Algemene feiten
+prop(aquarium, materiaal, water).
+prop(aquarium, afsluiting, glas).
+
+prop(kooi, materiaal, land).
+
+prop(terrarium, materiaal, land).
+prop(terrarium, materiaal, water).
+prop(terrarium, afsluiting, glas).
+
+prop(voliere, afsluiting, gaas).
+
+prop(vijver, materiaal, water).
+prop(vijver, attribute, buiten).
+
+% Specifieke kennis
+prop(1, grootte_orde, medium).
+prop(1, materiaal, land).
+prop(1, attribute, buiten).
+prop(1, loc, 160/140).   % Bertegraad keer hoogtegraad
+prop(1, name, 'Birdhouse').
+
+prop(2, grootte_orde, medium).
+prop(2, afsluiting, hek).
+prop(2, materiaal, land).
+prop(2, loc, 275/100).
+prop(2, name, 'Flamingo').
+
+prop(3, grootte_orde, groot).
+prop(3, afsluiting, hek).
+prop(3, attribute, buiten).
+prop(3, loc, 380/105).
+prop(3, name, 'Zebra').
+
+prop(4, grootte_orde, medium).
+prop(4, afsluiting, tralies).
+prop(4, materiaal, water).
+prop(4, attribute, buiten).
+prop(4, loc, 260/200).
+prop(4, name, 'Gibbons').
+
+prop(5, grootte_orde, groot).
+prop(5, afsluiting, hek).
+prop(5, materiaal, water).
+prop(5, attribute, buiten).
+prop(5, loc, 335/225).
+prop(5, name, 'Ibex').
+
+prop(6, grootte_orde, klein).
+prop(6, afsluiting, glas).
+prop(6, materiaal, water).
+prop(6, attribute, binnen).
+prop(6, loc, 445/230).
+prop(6, name, 'Kleine zoogdieren').
+
+prop(7, grootte_orde, medium).
+prop(7, afsluiting, hek).
+prop(7, attribute, buiten).
+prop(7, loc, 450/175).
+prop(7, name, 'Kangoeroes').
+
+prop(8, grootte_orde, groot).
+prop(8, afsluiting, hek).
+prop(8, attribute, buiten).
+prop(8, loc, 480/125).
+prop(8, name, 'Antilopen').
+
+prop(9, grootte_orde, klein).
+prop(9, afsluiting, hek).
+prop(9, attribute, buiten).
+prop(9, loc, 650/130).
+prop(9, name, 'Fazanten').
+
+prop(10, grootte_orde, klein).
+prop(10, afsluiting, hek).
+prop(10, materiaal, water).
+prop(10, attribute, buiten).
+prop(10, loc, 650/175).
+prop(10, name, 'Ibis').
+
+prop(11, grootte_orde, medium).
+prop(11, attribute, nachthok).
+prop(11, afsluiting, hek).
+prop(11, attribute, buiten).
+prop(11, loc, 735/200).
+prop(11, name, 'Wolven').
+
+prop(12, grootte_orde, medium).
+prop(12, afsluiting, muur).
+prop(12, attribute, buiten).
+prop(12, loc, 795/195).
+prop(12, name, 'Chimpansees').
+
+prop(13, grootte_orde, medium).
+prop(13, afsluiting, muur).
+prop(13, materiaal, water).
+prop(13, attribute, buiten).
+prop(13, loc, 840/135).
+prop(13, name, 'Penguins').
+
+prop(14, grootte_orde, groot).
+prop(14, afsluiting, hek).
+prop(14, attribute, buiten).
+prop(14, loc, 865/190).
+prop(14, name, 'Guanacos').
+
+prop(15, grootte_orde, groot).
+prop(15, attribute, nachthok).
+prop(15, afsluiting, hek).
+prop(15, attribute, buiten).
+prop(15, loc, 955/255).
+prop(15, name, 'Bruine beren').
+
+prop(16, grootte_orde, groot).
+prop(16, attribute, nachthok).
+prop(16, afsluiting, tralies).
+prop(16, materiaal, water).
+prop(16, attribute, buiten).
+prop(16, loc, 870/280).
+prop(16, name, 'Gorilla\'s').
+
+prop(17, grootte_orde, medium).
+prop(17, afsluiting, hek).
+prop(17, attribute, buiten).
+prop(17, loc, 910/300).
+prop(17, name, 'Tapirs').
+
+prop(18, grootte_orde, huge).
+prop(18, attribute, nachthok).
+prop(18, afsluiting, glas).
+prop(18, materiaal, water).
+prop(18, attribute, buiten).
+prop(18, attribute, binnen).
+prop(18, loc, 870/320).
+prop(18, name, 'Nijlpaarden').
+
+prop(19, grootte_orde, medium).
+prop(19, afsluiting, hek).
+prop(19, materiaal, land).
+prop(19, loc, 920/345).
+prop(19, name, 'Kraanvogel').
+
+prop(20, grootte_orde, groot).
+prop(20, afsluiting, hek).
+prop(20, attribute, buiten).
+prop(20, loc, 810/325).
+prop(20, name, 'Bizon').
+
+prop(20, grootte_orde, medium).
+prop(21, afsluiting, hek).
+prop(21, materiaal, water).
+prop(21, attribute, buiten).
+prop(21, loc, 680/270).
+prop(21, name, 'Chamois').
+
+prop(22, grootte_orde, huge).
+prop(22, afsluiting, hek).
+prop(22, attribute, buiten).
+prop(22, loc, 665/345).
+prop(22, name, 'Giraffes').
+
+prop(23, grootte_orde, huge).
+prop(23, afsluiting, hek).
+prop(23, attribute, buiten).
+prop(23, loc, 580/320).
+prop(23, name, 'Olifanten').
+
+prop(24, grootte_orde, medium).
+prop(24, afsluiting, tralies).
+prop(24, attribute, buiten).
+prop(24, loc, 550/250).
+prop(24, name, 'Wolven en Hyenas').
+
+prop(25, grootte_orde, medium).
+prop(25, afsluiting, tralies).
+prop(25, attribute, buiten).
+prop(25, loc, 450/350).
+prop(25, name, 'Tijgers en Panters').
+
+prop(26, grootte_orde, groot).
+prop(26, afsluiting, muur).
+prop(26, materiaal, water).
+prop(26, attribute, buiten).
+prop(26, attribute, nachthok).
+prop(26, loc, 345/350).
+prop(26, name, 'Leeuwen').
+
+prop(27, grootte_orde, groot).
+prop(27, afsluiting, hek).
+prop(27, materiaal, land).
+prop(27, loc, 350/275).
+prop(27, name, 'Flamingo\'s en eenden').
+
+prop(28, grootte_orde, medium).
+prop(28, afsluiting, hek).
+prop(28, loc, 250/300).
+prop(28, name, 'Pelikanen').
+
+prop(29, grootte_orde, groot).
+prop(29, attribute, binnen).
+prop(29, attribute, nachthok).
+prop(29, loc, 280/350).
+prop(29, name, 'Reptielenhuis').
+
+prop(30, grootte_orde, groot).
+prop(30, afsluiting, hek).
+prop(30, attribute, buiten).
+prop(30, loc, 125/250).
+prop(30, name, 'Kamelen').
+
+prop(31, grootte_orde, medium).
+prop(31, afsluiting, muur).
+prop(31, materiaal, water).
+prop(31, attribute, buiten).
+prop(31, loc, 180/235).
+prop(31, name, 'Monkey rock').
+
+prop(32, grootte_orde, groot).
+prop(32, attribute, binnen).
+prop(32, loc, 815/75).
+prop(32, name, 'Aquarium').
+% Database met globale variabelen
+% zoals: huidige datum etc
+% handig voor: dynamisch artis, waarin de globale vars
+% steeds worden geassert (en opgeslagen in dit bestand).
+
+
+% changable
+global_var(datum_dag, 1).
+global_var(datum_maand, 1).
+global_var(datum_jaar, 2009).
+global_var(tijd_uur, 10).
+global_var(tijd_min, 0).
+global_var(vermogen_artis, 50000000).
+global_var(medewerkers, 200).
+
+
+
+% do not change!
+global_var(datum, A/B/C) :-
+	global_var(datum_dag, A),
+	global_var(datum_maand, B),
+	global_var(datum_jaar, C).
+global_var(tijd, A/B) :-
+	global_var(tijd_uur, A),
+	global_var(tijd_min, B).
+
+% What an animal wants
+% Auteur: Robrecht Jurriaans
+
+
+% Juiste grootte verblijf
+prop(Ani, nodig, tiny):-
+	isfam(Ani, dier),
+	prop(Ani, grootte_orde, tiny).
+
+prop(Ani, nodig, klein):-
+	isfam(Ani, dier),
+	prop(Ani, grootte_orde, tiny)
+	;
+	isfam(Ani, dier),
+	prop(Ani, grootte_orde, klein).
+
+prop(Ani, nodig, medium):-
+	isfam(Ani, dier),
+	prop(Ani, grootte_orde, tiny)
+	;
+	isfam(Ani, dier),
+	prop(Ani, grootte_orde, klein)
+	;
+	isfam(Ani, dier),
+	prop(Ani, grootte_orde, medium).
+
+prop(Ani, nodig, groot):-
+	isfam(Ani, dier),
+	prop(Ani, grootte_orde, tiny)
+	;
+	isfam(Ani, dier),
+	prop(Ani, grootte_orde, klein)
+	;
+	isfam(Ani, dier),
+	prop(Ani, grootte_orde, medium)
+	;
+	isfam(Ani, dier),
+	prop(Ani, grootte_orde, groot).
+
+prop(Ani, nodig, huge):-
+	isfam(Ani, dier),
+	prop(Ani, grootte_orde, tiny)
+	;
+	isfam(Ani, dier),
+	prop(Ani, grootte_orde, klein)
+	;
+	isfam(Ani, dier),
+	prop(Ani, grootte_orde, medium)
+	;
+	isfam(Ani, dier),
+	prop(Ani, grootte_orde, groot)
+	;
+	isfam(Ani, dier),
+	prop(Ani, grootte_orde, huge).
+
+
+
+% stukje interface, voor test-doeleinden
+maak_gebouw_schoon(Gebouw) :-
+	get_stats_b(Gebouw, SoortGebouw, Nachthok, Gevaarlijk),
+	writef('Om gebouw %w schoon te maken zijn de volgende materialen nodig:\n',
+		[Gebouw]),
+	verzamel_materialen(SoortGebouw, MatList),
+	danger_mat(MatList, Gevaarlijk, Nachthok, NewMatList),
+	show_list(NewMatList),
+	writef('Om de veiligheid te waarborgen zijn de volgende stappen nodig:\n'),
+	stel_veilig(Gevaarlijk, Nachthok, SafeList),
+	show_safe(SafeList),
+	write('Om het gebouw schoon te maken zijn de volgende stappen nodig:\n'),
+	maak_schoon(SoortGebouw, CleanList),
+	show_list(CleanList),
+	write('Om het schoonmaken af te sluiten zijn de volgende stappen nodig:\n'),
+	sluit_af(Gevaarlijk, Nachthok, LockList),	
+	show_list(LockList).
+	
+show_safe([]) :- !,
+	write('Veiligstellen niet nodig.\n').
+
+show_safe(List) :-
+	show_list(List).	
+
+show_list([]).
+
+show_list([H|T]) :-
+	writef('- %w\n',[H]),
+	show_list(T).
+
+get_stats_b(Gebouw, SoortGebouw, Nachthok, Gevaarlijk) :-
+	isa(Gebouw, SoortGebouw),
+	get_nachthok(Gebouw, Nachthok),
+	writef('Gebouw %w is een %w. Het heeft een %w.\n', [Gebouw, SoortGebouw,
+		Nachthok]),
+	get_danger_b(Gebouw, Gevaarlijk).
+
+get_nachthok(Gebouw, nachthok) :-
+	prop(Gebouw, attribute, nachthok),
+	!.
+
+get_nachthok(_, geen_nachthok).
+
+get_danger_b(Gebouw, gevaarlijk) :-
+	prop(Gebouw, resident, Animal),
+	get_danger_a(Animal, gevaarlijk),
+	!,
+	writef('Er zit een %w in dit gebouw. Dit dier is gevaarlijk.\n', [Animal]).
+
+get_danger_b(Gebouw, ongevaarlijk):-
+	prop(Gebouw, resident, Animal),
+	writef('Er zit een %w in gebouw %w. Dit dier is ongevaarlijk.\n',
+		[Animal, Gebouw]). 
+% einde interface
+
+verzamel_materialen(aquarium, [spons, glasreiniger, emmer, slang, vuilniszak]).
+verzamel_materialen(kooi, [hark, schep, emmer, bezem, bodembedekking,
+	vuilniszak]).
+verzamel_materialen(vijver, [schepnet, emmer, bezem, vuilniszak]).
+verzamel_materialen(terrarium, [emmer, spons, glasreiniger, vuilniszak]).
+verzamel_materialen(voliere, [hark, emmer, bezem, vuilniszak]).
+
+danger_mat(L, gevaarlijk, geen_nachthok, [verdovingsgeweer|L]) :- !.
+danger_mat(L,  _, nachthok,L) :- !.
+danger_mat(L, ongevaarlijk, _, L) :- !.
+	
+stel_veilig(ongevaarlijk, _, []) :- !.
+stel_veilig(gevaarlijk, nachthok, SafeList) :- !,
+	jaag_dier_in_nachthok(JaagList),
+	nachthok_afsluiten(NhLockList),
+	append([JaagList, NhLockList], SafeList).
+stel_veilig(gevaarlijk, geen_nachthok, SafeList) :- !,
+	verdoof_dier(VerdList),
+	append([VerdList], SafeList).
+
+jaag_dier_in_nachthok(['het dier in het nachthok jagen']).
+nachthok_afsluiten(['het nachthok afsluiten']).
+verdoof_dier(['het dier verdoven']).
+
+maak_schoon(kooi, KooiList) :-
+	verwijder_bodembedekking(BodVerList),
+	verwijder_uitwerpselen(UitVerList),
+	maak_vloer_schoon(VloerList),
+	nieuwe_bodembedekking(NwBodList),
+	append([BodVerList, UitVerList, VloerList, NwBodList], KooiList).
+maak_schoon(aquarium, AqList) :-
+	maak_aquarium_schoon(Aq1List),
+	ververs_water(WaterList),
+	append([Aq1List, WaterList], AqList).
+maak_schoon(voliere, VolList) :-
+	verwijder_uitwerpselen(UitVerList),
+	verwijder_veren(VeerVerList),
+	maak_vloer_schoon(VloerList),
+	append([UitVerList, VeerVerList, VloerList], VolList).
+maak_schoon(terrarium, TerList) :- 
+	verwijder_bodembedekking(BodVerList),
+	maak_terrarium_schoon(Ter1List),
+	nieuwe_bodembedekking(NwBodList),
+	append([BodVerList, Ter1List, NwBodList], TerList).
+maak_schoon(vijver, VijList) :-
+	haal_zooi_uit_water(VijList).
+
+verwijder_bodembedekking(BodVerList) :-
+	hark_bodembedekking(HarkList),
+	doe_in_vuilniszak(bodembedekking, ZakList),
+	append([HarkList, ZakList], BodVerList).
+hark_bodembedekking(['bodembedekking harken']).
+doe_in_vuilniszak(X, [X' 'H]) :-
+	H = 'in vuilniszak doen'.
+
+verwijder_uitwerpselen(UVList) :-
+	schep_uitwerpselen(SUList),
+	doe_in_vuilniszak(uitwerpselen, ZakList),
+	append([SUList, ZakList], UVList).
+schep_uitwerpselen(['uitwerpselen scheppen']).
+
+verwijder_veren(VVList) :-
+	pluk_veren(PVList),
+	raap_veren(RVList),
+	doe_in_vuilniszak(veren, ZakList),
+	append([PVList, RVList, ZakList], VVList).
+pluk_veren(['veren uit gaas plukken']).
+raap_veren(['veren oprapen']).	
+	
+nieuwe_bodembedekking(['nieuwe bodembedekking neerleggen']).
+
+maak_vloer_schoon(VloerList) :-
+	spuit_vloer_nat(SVList),
+	borstel_vloer(BVList),
+	water_weglopen(WWList),
+	append([SVList, BVList, WWList], VloerList).
+spuit_vloer_nat(['vloer natspuiten']).
+borstel_vloer(['vloer borstelen']).
+water_weglopen(['water laten weglopen']).
+maak_aquarium_schoon(AqList) :-
+	poets_ruit(RList),
+	poets_muren(MList),
+	poets_bodem(BList),
+	append([RList, MList, BList], AqList).
+poets_ruit(['ruit poetsen']).
+poets_muren(['muren poetsen']).
+poets_bodem(['bodem poetsen']).
+
+maak_terrarium_schoon(TerList) :-
+	poets_ruit(RList),
+	poets_muren(MList),
+	append([RList, MList], TerList).
+
+ververs_water(VWList) :-
+	pomp_weg(PList),
+	vul_aan(VList),
+	append([PList, VList], VWList).
+pomp_weg(['een derde deel van het water wegpompen']).
+vul_aan(['aanvullen met vers water']).
+
+haal_zooi_uit_water(ZWList) :-
+	schep_zooi(ZList),
+	doe_in_vuilniszak(zooi, ZakList),
+	append([ZList, ZakList], ZWList).
+schep_zooi(['zooi uit water scheppen']).
+
+sluit_af(gevaarlijk, nachthok, LockList) :- !,
+	laat_uit_nh(LUList),
+	maak_nachthok_schoon(NhList),
+	sluit(SList),
+	append([LUList, NhList, SList], LockList).
+
+sluit_af(_, _, LockList) :- !,
+	sluit(LockList).
+
+laat_uit_nh(LUList) :-
+	uit_nh_laten(UNList),
+	nachthok_sluiten(SNList),
+	append([UNList, SNList], LUList).
+uit_nh_laten(['dier uit nachthok in hok laten']).
+nachthok_sluiten(['nachthok sluiten']).
+
+maak_nachthok_schoon(NhList) :-
+	verwijder_bodembedekking(BodVerList),
+	maak_vloer_schoon(VloerList),
+	nieuwe_bodembedekking(NwBodList),
+	append([BodVerList, VloerList, NwBodList], List),
+	add_to_item('nachthok:', List, NhList).
+	
+add_to_item(_, [], []) :- !.
+
+add_to_item(X, [H|T], [X' 'H|NT]) :-
+	add_to_item(X, T, NT).
+
+sluit(['hok afsluiten']).	
+
+% Stratenlijst
+% Auteurs: Robrecht Jurriaans, Moos Hueting
+% lijst van bewandelbare wegen inclusief algemene lengte
+
+
+street(1, 2, 127).
+street(1, 4, 122).
+street(1, 31, 102).
+street(2, 3, 110).
+street(2, 4, 106).
+street(3, 5, 133).
+street(3, 7, 104).
+street(3, 8, 107).
+street(4, 5, 84).
+street(4, 28, 105).
+street(5, 6, 115).
+street(5, 27, 57).
+street(6, 7, 60).
+street(6, 24, 112).
+street(6, 27, 110).
+street(7, 8, 63).
+street(7, 24, 130).
+street(8, 9, 175).
+street(9, 10, 50).
+street(10, 11, 94).
+street(10, 24, 130).
+street(11, 12, 65).
+street(11, 21, 94).
+street(12, 14, 75).
+street(13, 14, 65).
+street(13, 32, 70).
+street(14, 15, 116).
+street(14, 16, 95).
+street(15, 16, 94).
+street(15, 17, 69).
+street(15, 19, 102).
+street(16, 17, 50).
+street(16, 18, 45).
+street(17, 18, 50).
+street(17, 19, 51).
+street(18, 19, 61).
+street(18, 20, 65).
+street(20, 22, 151).
+street(21, 22, 81).
+street(21, 23, 117).
+street(22, 23, 94).
+street(23, 24, 81).
+street(23, 25, 138).
+street(24, 27, 207).
+street(25, 26, 110).
+street(26, 27, 80).
+street(26, 29, 70).
+street(28, 29, 63).
+street(28, 31, 101).
+street(30, 31, 62).
+	
+/*
+calc:-
+	street(X, Y),
+	distance(X,Y,Dist),
+	Dist2 is round(Dist+5),
+	writef('street(%w\, %w\, %w)\.', [X,Y,Dist2]),nl,fail.
+
+street(1,2).
+street(1,4).
+street(1,31).
+street(2,3).
+street(2,4).
+street(3,5).
+street(3,7).
+street(3,8).
+street(4,5).
+street(4,28).
+street(5,6).
+street(5,27).
+street(6,7).
+street(6,24).
+street(6,27).
+street(7,8).
+street(7,24).
+street(8,9).
+street(9,10).
+street(10,11).
+street(10,24).
+street(11,12).
+street(11,21).
+street(12,14).
+street(13,14).
+street(13,32).
+street(14,15).
+street(14,16).
+street(15,16).
+street(15,17).
+street(15,19).
+street(16,17).
+street(16,18).
+street(17,18).
+street(17,19).
+street(18,19).
+street(18,20).
+street(20,22).
+street(21,22).
+street(21,23).
+street(22,23).
+street(23,24).
+street(23,25).
+street(24,27).
+street(25,26).
+street(26,27).
+street(26,29).
+street(28,29).
+street(28,31).
+street(30,31).
+*/
+voer(Dier) :-
+	get_feeding(Dier, Gevaarlijk, _, _, Hoeveelheid, SoortEten),
+	geef_eten(Gevaarlijk, Hoeveelheid, SoortEten).
+
+get_feeding(Dier, Gevaarlijk, Grootte, Eetgewoonte, Hoeveelheid, SoortEten) :-
+	get_stats_a(Dier, Grootte, Eetgewoonte, Gevaarlijk),
+	verzamel_eten(Grootte, Eetgewoonte, Hoeveelheid, SoortEten).
+	
+get_stats_a(Dier, Grootte, Eetgewoonte, Gevaarlijk) :-
+	hasprop(Dier, grootte_orde, Grootte),
+	hasprop(Dier, eten, Eetgewoonte),
+	get_danger_a(Dier, Gevaarlijk).
+
+get_danger_a(Dier, gevaarlijk) :-
+	hasprop(Dier, knuffact, gevaarlijk),
+	!.
+
+get_danger_a(_, ongevaarlijk).
+
+verzamel_eten(Grootte, Eetgewoonte, Hoeveelheid, SoortEten) :-
+	get_amount(Grootte, Hoeveelheid),
+	get_food(Eetgewoonte, SoortEten).
+
+% interface
+geef_eten(Gevaarlijk, Hoeveelheid, Eten) :-
+	writef('Dit dier dient %w van het volgende voedsel te krijgen:\n',
+		[Hoeveelheid]),
+	show_list(Eten),
+	feed_danger(Gevaarlijk).
+
+feed_danger(gevaarlijk) :- !,
+	write('Het dier is gevaarlijk. Het eten dient daarom van een afstand in het verblijf gegooid te worden.\n').
+
+feed_danger(_).
+% eind interface
+
+% de daadwerkelijke db
+get_amount(huge, ergveel).
+get_amount(groot, veel).
+get_amount(medium, normaal).
+get_amount(klein, weinig).
+get_amount(tiny, ergweinig).
+
+get_food(herbivoor, [groenten, takken]).
+get_food(omnivoor, [groenten, brood, vlees]).
+get_food(carnivoor, [vlees]).
+% Interfaces voor bezoekers
+
+
+
+% gebruik startuser om van de huidige
+% gebruiker zijn naam en eigenschappen
+% te krijgen. De gebruiker moet zijn naam
+% opgeven en de eigenschappen worden geladen.
+% Bestaat de gebruiker nog niet, dan worden
+% vragen gesteld om de gebruiker aan te maken.
+
+
+
+startuser(Naam, Props) :-
+	write('Wat is je naam?\n'),
+	read(Naam_draft),
+	startuser_step1(Naam, Props, Naam_draft).
+
+startuser_step1(Naam, Props, Naam_draft) :-
+	isa(Naam_draft, bezoeker),		% user bestaat: props opvragen
+	!,
+	Naam = Naam_draft,
+	user_getprops(Naam_draft, Props).
+
+startuser_step1(Naam, Props, Naam_draft) :-
+	item_exists(Naam_draft, 1),			% user bestaat niet, naam wel (= dier)
+	isa(Naam_draft, Diernaam),
+	write('Sorry, we hebben al een %w die %w heet.\n', [Diernaam, Naam_draft]),
+	write('Kan je een andere tijdelijke naam verzinnen?\n'),
+	read(Naam_draft1),
+	startuser_step1(Naam, Props, Naam_draft1).
+
+startuser_step1(Naam, Props, Naam) :-
+	writef('Welkom in Artis, %w\n', [Naam]),	% user bestaat niet, dus aanmaken
+	write('Om je een perfect verblijf in artis te garanderen,\n'),
+	write('willen we graag een aantal dingen van je weten.\n'),
+	write('De rest van je dag hoef je enkel nog je naam te vertellen.\n\n'),
+	startuser_quest2(Naam, Props).
+
+%40
+startuser_quest2(Naam, Props) :-
+	write('In welk jaar ben je geboren?\n'),
+	read(Arg),
+	startuser_check2(Naam, Props, [], Arg).
+
+startuser_check2(Naam, Props, Props_draft, Arg) :-
+	number(Arg),
+	global_var(datum_jaar, Jaar),
+	Arg > 1800,			% neem t ruim
+	Arg =< Jaar,
+	!,
+	startuser_quest3(Naam, Props, [geboortejaar/Arg|Props_draft]).
+startuser_check2(Naam, Props, _, _) :-
+	write('Dat is geen jaartal, of onwaarschijnlijk.\n'),
+	startuser_quest2(Naam, Props).
+
+startuser_quest3(Naam, Props, Props_draft) :-
+	write('Hoe hoog is je IQ?\n'),
+	read(Arg),
+	startuser_check3(Naam, Props, Props_draft, Arg).
+
+startuser_check3(Naam, Props, Props_draft, Arg) :-
+        number(Arg),
+        Arg < 90,
+	!,
+        startuser_quest4(Naam, Props, [niveau/dom|Props_draft]).
+startuser_check3(Naam, Props, Props_draft, Arg) :-
+        number(Arg),
+        Arg >= 90,                                    %70
+	Arg < 125,
+        !,
+        startuser_quest4(Naam, Props, [niveau/normaal|Props_draft]).
+startuser_check3(Naam, Props, Props_draft, Arg) :-
+        number(Arg),
+        Arg >= 125,
+        !,
+        startuser_quest4(Naam, Props, [niveau/ontwikkeld|Props_draft]).
+startuser_check3(Naam, Props, Props_draft, _):-
+	write('Vul alsjeblieft een nummer in.\n'),
+        startuser_quest3(Naam, Props, Props_draft).  
+
+
+startuser_quest4(Naam, Props, Props_draft) :-
+        write('Lees je liever een boek, of liever de samenvatting?\n'),
+        read(Arg),
+        startuser_check4(Naam, Props, Props_draft, Arg).
+
+startuser_check4(Naam, Props, Props_draft, boek) :-
+	!,
+        startuser_quest5(Naam, Props, [opmaak/verhaal|Props_draft]).
+startuser_check4(Naam, Props, Props_draft, samenvatting) :-
+        !,
+	startuser_quest5(Naam, Props, [opmaak/tabel|Props_draft]).  
+startuser_check4(Naam, Props, Props_draft, _) :-
+	write('kies voor \'boek\' of \'samenvatting\'.\n'),
+        startuser_quest4(Naam, Props, Props_draft).
+
+
+startuser_quest5(Naam, Props, Props_draft) :-
+        write('Wat is je lievelingskleur?\n'),
+        read(Arg),
+        startuser_check5(Naam, Props, Props_draft, Arg).
+
+
+startuser_check5(Naam, Props, Props_draft, Arg) :-
+        prop(_, kleur, Arg),
+	!,
+        startuser_quest6(Naam, Props, [lievelingskleur/Arg|Props_draft]).
+startuser_check5(Naam, Props, Props_draft, _) :-
+        write('Noem nog eens een mooie kleur?\n'),
+	read(Arg),
+        startuser_check5(Naam, Props, Props_draft, Arg).
+
+
+
+
+startuser_quest6(Naam, Props, Props_draft) :-
+	write('\nTijd voor de dieren!\n'),
+	write('Kies steeds 1. of 2.\n'),
+        write('1. Roofdier, 2. Lieve dieren\n'),
+        read(Arg),
+        startuser_check6(Naam, Props, Props_draft, Arg).
+
+startuser_check6(Naam, Props, Props_draft, 1) :-
+	!,
+        startuser_quest7(Naam, Props, [knuffact/gevaarlijk|Props_draft]).
+startuser_check6(Naam, Props, Props_draft, 2) :-
+	!,
+        startuser_quest7(Naam, Props, [knuffact/knuffelbaar|Props_draft]).
+startuser_check6(Naam, Props, Props_draft, _) :-
+        write('Typ 1 of 2, gevolgd door een punt\n'),
+	read(Arg),
+        startuser_check6(Naam, Props, Props_draft, Arg).
+
+
+
+startuser_quest7(Naam, Props, Props_draft) :-
+        write('1. Grote dieren, 2. Kleine dieren\n'),
+        read(Arg),
+        startuser_check7(Naam, Props, Props_draft, Arg).
+
+startuser_check7(Naam, Props, Props_draft, 1) :-
+	!,
+        startuser_quest8(Naam, Props, [grootte_orde/groot, grootte_orde/huge|Props_draft]).
+startuser_check7(Naam, Props, Props_draft, 2) :-
+	!,
+        startuser_quest8(Naam, Props, [grootte_orde/tiny, grootte_orde/klein, grootte_orde/medium|Props_draft]).
+startuser_check7(Naam, Props, Props_draft, _) :-
+        write('Typ 1 of 2, gevolgd door een punt\n'),
+	read(Arg),
+        startuser_check7(Naam, Props, Props_draft, Arg).
+
+
+
+startuser_quest8(Naam, Props, Props_draft) :-
+        write('1. Dieren op het land, 2. Dieren in het water\n'),
+        read(Arg),
+        startuser_check8(Naam, Props, Props_draft, Arg).
+
+startuser_check8(Naam, Props, Props_draft, 1) :-
+	!,
+        startuser_quest9(Naam, Props, [nodig/land|Props_draft]).
+startuser_check8(Naam, Props, Props_draft, 2) :-
+	!,
+        startuser_quest9(Naam, Props, [nodig/water|Props_draft]).
+startuser_check8(Naam, Props, Props_draft, _) :-
+        write('Typ 1 of 2, gevolgd door een punt\n'),
+	read(Arg),
+        startuser_check8(Naam, Props, Props_draft, Arg).
+
+
+startuser_quest9(Naam, Prop, Prop) :-
+	writef('Dat waren de vragen, %w!\n\n', [Naam]),
+	user_add(Naam, Prop).
+
+
+
+% Routeplanner
+% Auteur: Robrecht Jurriaans
+% interface voor het opzetten van gebruikersprofiel
+% en aan de hand van dat profiel wordt er een route bedacht.
+
+% :-	write('Routeplanner \ntyp routestart\. om te beginnen\n').
+
+routestart:-
+	write('Er zijn 2 opties voor de routeplanner:\n'),
+	write('Typ 1. om een route te plannen naar een bepaald punt.\n'),
+	write('Typ 2. voor een advies voor een leuke route.\n'),
+	read(X),
+	goroute(X).
+
+goroute(1):-
+	!,
+	routestartnormal.
+
+goroute(2):-
+	!,
+	routestartpref.
+
+goroute(help):-
+	!,
+	write('Typ 1 of 2 in gevolgd door een punt "."\n'),
+	read(X),
+	goroute(X).
+
+goroute(X):-
+	writef('%w is niet een optie, probeer opnieuw\n',[X]),
+	read(Y),
+	goroute(Y).
+
+routestartnormal:-
+	write('Welkom bij Artis-routeplanner\n'),
+	write('Bij welk gebouw bent u nu? (typ help voor een lijst van gebouwnummers)\n'),
+	read(X), 
+	goroute1(X).
+
+goroute1(X):-
+	number(X),!,
+	writef('U bent bij gebouw %w, naar welk gebouw wilt u?\n',[X]),
+	read(Y),
+	goroute2(X,Y).
+
+goroute1(help):-
+	!,
+	findall(X, isfam(X, gebouw), List),
+	showbuildinglist(List),nl,
+	write('Dit zijn alle mogelijkheden, bij welk gebouw staat u nu?\n'),
+	read(Y),
+	goroute1(Y).
+
+goroute1(quit):-!.
+
+goroute1(X):-
+	writef('%w is niet een mogelijkheid, typ help voor een lijst van de gebouwen\n',[X]),
+	read(Y),
+	goroute1(Y).
+
+goroute2(X,Y):-
+	number(Y),!,
+	route(X, [Y], Path, _),
+	shownormalpath(Path).
+
+goroute2(Z,help):-
+	findall(X, isfam(X, gebouw), List),
+	showbuildinglist(List),nl,
+	write('Dit zijn alle mogelijkheden, waar wilt u naar toe?\n'),
+	read(Y),
+	goroute2(Z, Y).
+
+goroute2(_, quit):-!.
+
+goroute2(X, X2):-
+	writef('%w is niet een mogelijkheid, typ help voor een lijst van de gebouwen\n',[X2]),
+	read(Y),
+	goroute2(X,Y).
+
+
+routestartpref:-
+	write('Welkom bij Artis-routeplanner\n'),
+	write('Bij welk gebouw bent u nu?\n'),
+	read(X),
+	gostart(X).
+
+gostart(X):-
+	number(X),!,
+	write('Vraag 1:\nWelk type dier heeft uw voorkeur?
+	\n1. Roofdier 2. Lieve dieren\n'),
+	read(Cho),
+	goquestion(X/Cho).
+
+gostart(help):-
+	!,
+	findall(X, isfam(X, gebouw), List),
+	showbuildinglist(List),
+	read(Y),
+	gostart(Y).
+
+gostart(quit):-!.
+
+gostart(X):-
+	writef('%w is niet een optie, typ help voor een lijst van de gebouwen\n',[X]),
+	read(Y),
+	gostart(Y).
+	
+
+goquestion(X/Cho):-
+	member(Cho, [1,2]),!,
+	write('Vraag 2:\nWelk type dier heeft uw voorkeur?
+	\n1. Grote dieren 2. Kleine dieren\n'),
+	read(Cho2),
+	goquestion2(X/Cho/Cho2).
+
+goquestion(_/quit):-!.
+
+goquestion(X/Cho):-
+	writef('%w is niet een optie,\n',[Cho]),
+	gostart(X).
+
+goquestion2(X/Cho/Cho2):-
+	member(Cho2, [1,2]),!,
+	write('Vraag 3:\nWelk type dier heeft uw voorkeur?
+	\n1. Land-dieren 2. Water-dieren\n'),
+	read(Cho3),
+	gochoice(X/Cho/Cho2/Cho3).
+
+goquestion2(_/_/quit):-!.
+
+goquestion2(X/Cho/Cho2):-
+	writef('%w is niet een optie,\n',[Cho2]),
+	goquestion(X/Cho).
+
+
+% Stuurt de routeplanner aan met een gebruikersprofiel
+gochoice(X/Y1/Y2/Y3):-
+	member(Y3, [1,2]),!,
+	derive1(Y1, List1),
+	derive2(Y2, List2),
+	derive3(Y3, List3),
+	favourite(List1,List2,List3, Tmplist2),
+%	append(List1,List2, Tmplist),
+%	append(List3, Tmplist, Tmplist2),
+	remdup(Tmplist2, AniList),
+	anitono(AniList, List),
+%	write(List).
+	routeplan(X, List, [], Path),
+	showpath(Path).
+
+gochoice(_/_/_/quit):-!.
+
+gochoice(X/Cho/Cho2/Cho3):-
+	writef('%w is niet een optie,\n',[Cho3]),
+	goquestion2(X/Cho/Cho2).
+
+
+% ANImal to No.
+% genereert een lijst verblijven aan de hand van een lijst dieren
+anitono([], []):-!.
+
+anitono([H|T], [No|List]):-
+	prop(H, verblijf, No),
+	anitono(T, List).
+
+% derivepredikaten
+% genereren een lijst op basis van attributen
+% hoeveel dieren er ook zijn, dit predikaat werkt dynamisch
+derive1(1, List):-
+	match_attributen([knuffact/gevaarlijk], [], List, 4).
+
+derive1(2, List):-
+	match_attributen([knuffact/knuffelbaar], [], List, 4).
+
+derive2(1, List):-
+	match_attributen([grootte_orde/groot], [], List1, 4),
+	match_attributen([grootte_orde/huge], [], List2, 4),
+	append(List1, List2, List).
+
+derive2(2, List):-
+	match_attributen([grootte_orde/tiny], [], List1, 4),
+	match_attributen([grootte_orde/klein], [], List2, 4),
+	match_attributen([grootte_orde/medium], [], List3, 4),
+	append(List1, List2, List4),
+	append(List3, List4, List).
+
+
+derive3(1, List):-
+	match_attributen([nodig/land], [], List, 4).
+
+derive3(2, List):-
+	match_attributen([nodig/water], [], List, 4).
+
+
+% Remove duplicates
+remdup([], []):-!.
+
+remdup([H|T], [H|List]):-
+	\+ memberchk(H, T),!,
+	remdup(T, List).
+
+remdup([_|T], List):-
+	remdup(T, List).
+
+% Favourite-predikaat
+% kiest uit 3 lijsten met dieren de leukste eruit,
+% dit predikaat kan makkelijk aangepast worden om meer lijsten te
+% vergelijken. Zo kan een langere lijst vragen gecreert worden
+favourite(L1, L2, L3, List):-
+	getdoubles(L1, L2, D1),
+	getdoubles(L1, L3, D2),
+	getdoubles(L2, L3, D3),
+	append(D1, D2, D4),
+	append(D3, D4, List).
+
+% getdoubles vergelijkt 2 lijsten en genereert een lijst van
+% objecten die in beide lijsten voorkomen.
+getdoubles([], _ , []):-!.
+
+getdoubles([H|T], List, [H|Rest]):-
+	memberchk(H, List),!,
+	getdoubles(T, List, Rest).
+
+getdoubles([_|T], List, Rest):-
+	getdoubles(T, List, Rest).
+
+
+% Show building list
+showbuildinglist([]):-!.
+
+showbuildinglist([H|T]):-
+	number(H),!,
+	prop(H, name, Name),
+	writef('Gebouw %3l:%w\n',[H,Name]),
+	showbuildinglist(T).
+
+showbuildinglist([_|T]):-
+	showbuildinglist(T).
+
+
+shownormalpath([X]):-
+	prop(X, name, Name),
+	writef('U bent bij uw eindbestemming: gebouw %w:%w\nTyp ; in voor een alternatieve route\n',[X,Name]),
+	write('Een prettige dag nog verder!'),!.
+
+shownormalpath([H,H2|T]):-
+	prop(H, name, Name),
+	prop(H2, name, Name2),
+	writef('U bent bij gebouw %w:%w\n',[H,Name]),
+	writef('Loopt u verder naar gebouw %w:%w\n',[H2,Name2]),
+	write('-------------------------------------------------'),nl,
+	shownormalpath([H2|T]).
+
+
+
+
+
+
+
+
+% Load_everything.pl
+% (consult everything here)
+% Version 0.3
+
+
+% no irritating messages about 'not together in source-file'
+:-	style_check(-discontiguous).
+
+% nodig voor het in vuilniszak doen van afval (zodat het er netjes uitziet,
+% het valt nog te bezien hoe we dat moeten gaan aanpakken in de uitindelijke
+% interface)
+:-	op(500, yfy, ' ').
+
+% Databases / knowledge bases
+:-	include('db_dieren_algemeen.pl').	% algemene diersoorten (leeuw, etc)
+:-	include('db_dieren_artis.pl').		% specifieke dieren in artis (bv.simba)
+:-	include('db_gebouwen_artis.pl').	% gebouwen in artis met eigenschappen
+:-	include('db_schoonmaak.pl').		% informatie over hoe schoon te maken
+:-	include('db_voeding.pl').		% informatie over hoe dieren te voeden
+:-	include('db_streets.pl').		% straten/paden in artis, met cost
+:-	include('db_globalvars.pl').		% globale variabelen (datum etc)
+:-      include('db_nodig.pl').			% regels voor property's (voorouders)
+:-	include('db_bezoekers_artis.pl').	% (dynamische) database met bezoekers
+
+
+% Algoritmes
+:-	include('alg_overerving.pl').		% overervingsregels
+:-	include('alg_routeplanner.pl').		% route over wegen plannen
+:-	include('alg_alterverblijf.pl').	% zoek alternatief verblijf voor dier x
+:-	include('alg_statbuild.pl').		% geeft huidige statistieken
+:-      include('alg_dieropattribuut.pl').      % zoek dier op gegeven attributen
+:-      include('alg_vindlevel.pl').		% 
+:-      include('alg_zoekattributen.pl').	% ..
+:-      include('alg_vindgelijkendedieren.pl').	% lijstjes met dieren die op elkaar lijken
+:-      include('alg_dierinfo.pl').		% inf over dieren (gebaseerd op user)
+:-      include('alg_opdr2.pl').		% info over dieren
+:-	include('alg_bezoekers.pl').		% user add/remove/getinfo
+:-	include('alg_derive_dieren.pl').	% geeft lijst met dieren die gebruiker leuk vindt
+
+:-	include('alg_artisthegame.pl').         % obscuur bestand waar niemand de oorsprong van weet
+
+
+% Testinterfaces
+%:-      include('intf_menu.pl').		% algemeen testmenu. open met 'menu.' voor alle opties
+%:-	include('intf_diereninfo.pl').		% informatie voor bezoekers over dieren
+:-	include('int_routeplan.pl').		% route plannen voor bezoekers
+:-	include('int_bezoekers.pl').		% testpredicaten voor gebruikers
+

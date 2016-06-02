@@ -1,0 +1,17 @@
+% Specifieke dieren
+% 
+% Robrecht:
+% ideeen voor opbouw specifieke dierenlijst
+% 
+% isa(simba, leeuw).
+% prop(simba, allergie, gras).
+% prop(simba, leeftijd, 5).
+% prop(simba, geslacht, man).
+%
+% Het lijkt mij leuk om uit Martijn zijn namenbestand, een naam willekeurig deze eigenschappen mee te geven
+% dus:
+% isa(Naam, Animal).
+% prop(Animal, allergie, geen).  % dit statistisch gezien (90% geen) (4% gras) (2% vlees) (2% borstel) (1% verzorger)
+% prop(Animal, leeftijd, Age).  (tussen 0 en 20, want geen zin om dit specifiek te doen per diersoort:P)
+% prop(Animal, geslacht, Gender).  (lekker logisch toch (statistisch volgens mij 51% vrouw en 49% man
+%
